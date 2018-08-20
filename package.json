@@ -1,7 +1,7 @@
 {
   "name": "tfjs-tiny-yolo-v2",
   "version": "0.0.0",
-  "description": "Tensorflow.js implementation of tiny yolo v2 using depthwise separable convolutions, built on top of tfjs-core.",
+  "description": "Tiny YOLO v2 object detection with tensorflow.js.",
   "main": "./build/index.js",
   "typings": "./build/index.d.ts",
   "scripts": {

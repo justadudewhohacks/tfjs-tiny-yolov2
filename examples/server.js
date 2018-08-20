@@ -10,10 +10,11 @@ app.use(express.urlencoded({ extended: true }))
 const viewsDir = path.join(__dirname, 'views')
 app.use(express.static(viewsDir))
 app.use(express.static(path.join(__dirname, './public')))
-app.use(express.static(path.join(__dirname, '../weights')))
+app.use(express.static(path.join(__dirname, '../models')))
 app.use(express.static(path.join(__dirname, '../dist')))
 
-app.get('/', (req, res) => res.redirect('/face_detection'))
+app.get('/', (req, res) => res.redirect('/voc_object_detection'))
+app.get('/voc_object_detection', (req, res) => res.sendFile(path.join(viewsDir, 'vocObjectDetection.html')))
 app.get('/face_detection', (req, res) => res.sendFile(path.join(viewsDir, 'faceDetection.html')))
 
 app.post('/fetch_external_image', async (req, res) => {

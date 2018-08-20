@@ -10,9 +10,22 @@ export type DrawTextOptions = {
   color?: string
 }
 
+export type DrawDetectionOptions = {
+  lineWidth?: number
+  fontSize?: number
+  fontStyle?: string
+  textColor?: string
+  boxColor?: string,
+  withScore?: boolean,
+  withClassName?: boolean
+}
+
 export type DrawOptions = {
   lineWidth: number
   fontSize: number
   fontStyle: string
-  color: string
+  textColor: string
+  boxColor: string,
+  withScore: boolean,
+  withClassName: boolean
 }

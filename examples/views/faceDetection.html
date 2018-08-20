@@ -66,13 +66,13 @@
     let sizeType = 'lg'
 
     function onIncreaseThreshold() {
-      scoreThreshold = Math.min(faceapi.round(scoreThreshold + 0.1), 1.0)
+      scoreThreshold = Math.min(yolo.round(scoreThreshold + 0.1), 1.0)
       $('#scoreThreshold').val(scoreThreshold)
       updateResults()
     }
 
     function onDecreaseThreshold() {
-      scoreThreshold = Math.max(faceapi.round(scoreThreshold - 0.1), 0.1)
+      scoreThreshold = Math.max(yolo.round(scoreThreshold - 0.1), 0.1)
       $('#scoreThreshold').val(scoreThreshold)
       updateResults()
     }
@@ -103,7 +103,7 @@
 
       const detections = await net.detect(inputImgEl, forwardParams)
 
-      yolo.drawDetection('overlay', detections.map(det => det.forSize(width, height)))
+      yolo.drawDetection('overlay', detections.map(det => det.forSize(width, height)), { color: 'red' })
     }
 
     async function onSelectionChanged(uri) {
@@ -113,22 +113,25 @@
     }
 
     async function run() {
-      const modelName = 'face_detection_model'
-      const config = await fetchJson(`/models/face_detection_model_config.json`)
+      const config = await fetchJson(`face_detection_model_config.json`)
       net = new yolo.TinyYolov2(config)
-      await net.load(`/models/face_detection_model-weights_manifest.json`)
+      await net.load(`face_detection_model-weights_manifest.json`)
 
       $('#loader').hide()
       onSelectionChanged($('#selectList select').val())
     }
 
     $(document).ready(function() {
+      renderNavBar('#navbar', 'face_detection')
+
+      const images = [1, 2, 3, 4, 5].map(n => `images/face_detection/${n}.jpg`)
       renderImageSelectList(
         '#selectList',
         async (uri) => {
           await onSelectionChanged(uri)
         },
-        'bbt1.jpg'
+        images,
+        images[0]
       )
 
       const sizeTypeSelect = $('#sizeType')

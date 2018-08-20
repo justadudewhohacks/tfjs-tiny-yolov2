@@ -1,14 +1,21 @@
 import { ObjectDetection } from '../ObjectDetection';
 import { getContext2dOrThrow, resolveInput, round } from '../utils';
-import { DrawBoxOptions, DrawOptions, DrawTextOptions } from './types';
+import { DrawBoxOptions, DrawDetectionOptions, DrawOptions, DrawTextOptions } from './types';
 
-export function getDefaultDrawOptions(): DrawOptions {
-  return {
-    color: 'blue',
-    lineWidth: 2,
-    fontSize: 20,
-    fontStyle: 'Georgia'
-  }
+export function getDefaultDrawOptions(options: any = {}): DrawOptions {
+  return Object.assign(
+    {},
+    {
+      boxColor: 'blue',
+      textColor: 'red',
+      lineWidth: 2,
+      fontSize: 20,
+      fontStyle: 'Georgia',
+      withScore: true,
+      withClassName: true
+    },
+    options
+  )
 }
 
 export function drawBox(
@@ -24,7 +31,7 @@ export function drawBox(
     (options || {})
   )
 
-  ctx.strokeStyle = drawOptions.color
+  ctx.strokeStyle = drawOptions.boxColor
   ctx.lineWidth = drawOptions.lineWidth
   ctx.strokeRect(x, y, w, h)
 }
@@ -43,7 +50,7 @@ export function drawText(
 
   const padText = 2 + drawOptions.lineWidth
 
-  ctx.fillStyle = drawOptions.color
+  ctx.fillStyle = drawOptions.textColor
   ctx.font = `${drawOptions.fontSize}px ${drawOptions.fontStyle}`
   ctx.fillText(text, x + padText, y + padText + (drawOptions.fontSize * 0.6))
 }
@@ -51,7 +58,7 @@ export function drawText(
 export function drawDetection(
   canvasArg: string | HTMLCanvasElement,
   detection: ObjectDetection | ObjectDetection[],
-  options?: DrawBoxOptions & DrawTextOptions & { withScore: boolean }
+  options?: DrawDetectionOptions
 ) {
   const canvas = resolveInput(canvasArg)
   if (!(canvas instanceof HTMLCanvasElement)) {
@@ -70,12 +77,7 @@ export function drawDetection(
       height
     } = det.getBox()
 
-    const drawOptions = Object.assign(
-      getDefaultDrawOptions(),
-      (options || {})
-    )
-
-    const { withScore } = Object.assign({ withScore: true }, (options || {}))
+    const drawOptions = getDefaultDrawOptions(options)
 
     const ctx = getContext2dOrThrow(canvas)
     drawBox(
@@ -86,12 +88,12 @@ export function drawDetection(
       height,
       drawOptions
     )
-    if (withScore) {
+    if (drawOptions.withScore) {
       drawText(
         ctx,
         x,
         y,
-        `${round(det.getScore())}`,
+        `${det.className} (${round(det.score)})`,
         drawOptions
       )
     }

@@ -7,7 +7,6 @@ import { nonMaxSuppression } from '../commons/nonMaxSuppression';
 import { normalize } from '../commons/normalize';
 import { NetInput } from '../NetInput';
 import { ObjectDetection } from '../ObjectDetection';
-import { Point } from '../Point';
 import { toNetInput } from '../toNetInput';
 import { Dimensions, TNetInput } from '../types';
 import { sigmoid } from '../utils';
@@ -34,11 +33,11 @@ export class TinyYolov2 extends NeuralNetwork<NetParams> {
   }
 
   public get withClassScores(): boolean {
-    return this.config.withClassScores || this.config.numClasses > 1
+    return this.config.withClassScores || this.config.classes.length > 1
   }
 
   public get boxEncodingSize(): number{
-    return 5 + (this.withClassScores ? this.config.numClasses : 0)
+    return 5 + (this.withClassScores ? this.config.classes.length : 0)
   }
 
   public forwardInput(input: NetInput, inputSize: number): tf.Tensor4D {
@@ -105,11 +104,12 @@ export class TinyYolov2 extends NeuralNetwork<NetParams> {
     }
 
     const results = this.extractBoxes(out0, scoreThreshold, netInput.getReshapedInputDimensions(0))
-    const boxes = results.map(res => res.box)
-    const scores = results.map(res => res.score)
-
     out.dispose()
     out0.dispose()
+
+    const boxes = results.map(res => res.box)
+    const scores = results.map(res => res.score)
+    const classNames = results.map(res => res.className)
 
     const indices = nonMaxSuppression(
       boxes.map(box => box.rescale(inputSize)),
@@ -121,6 +121,7 @@ export class TinyYolov2 extends NeuralNetwork<NetParams> {
     const detections = indices.map(idx =>
       new ObjectDetection(
         scores[idx],
+        classNames[idx],
         boxes[idx].toRect(),
         inputDimensions
       )
@@ -145,7 +146,7 @@ export class TinyYolov2 extends NeuralNetwork<NetParams> {
       const boxes = reshaped.slice([0, 0, 0, 0], [numCells, numCells, numBoxes, 4])
       const scores = reshaped.slice([0, 0, 0, 4], [numCells, numCells, numBoxes, 1])
       const classes = this.withClassScores
-        ? reshaped.slice([0, 0, 0, 5], [numCells, numCells, numBoxes, this.config.numClasses])
+        ? reshaped.slice([0, 0, 0, 5], [numCells, numCells, numBoxes, this.config.classes.length])
         : tf.scalar(0)
       return [boxes, scores, classes]
     })
@@ -168,12 +169,19 @@ export class TinyYolov2 extends NeuralNetwork<NetParams> {
             const pos = { row, col, anchor }
             const classScores = this.withClassScores
               ? this.extractClassScores(classesTensor as tf.Tensor4D, score, pos)
-              : null
+              : [score]
+
+            const { classScore, className } = classScores
+              .map((classScore, idx) => ({
+                className: this.config.classes[idx],
+                classScore
+              }))
+              .reduce((max, curr) => max.classScore > curr.classScore ? max : curr)
 
             results.push({
               box: new BoundingBox(x, y, x + width, y + height),
-              score,
-              classScores,
+              score: classScore,
+              className,
               ...pos
             })
           }
@@ -189,7 +197,7 @@ export class TinyYolov2 extends NeuralNetwork<NetParams> {
 
   public extractClassScores(classesTensor: tf.Tensor4D, score: number, pos: { row: number, col: number, anchor: number }) {
     const { row, col, anchor } = pos
-    const classesData = Array(this.config.numClasses).fill(0).map((_, i) => classesTensor.get(row, col, anchor, i))
+    const classesData = Array(this.config.classes.length).fill(0).map((_, i) => classesTensor.get(row, col, anchor, i))
 
     const maxClass = classesData.reduce((max, c) => max > c ? max : c)
     const classes = classesData.map(c => Math.exp(c - maxClass))

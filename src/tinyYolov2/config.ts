@@ -2,9 +2,9 @@ import { Point } from '../Point';
 
 export type TinyYolov2Config = {
   withSeparableConvs: boolean
-  numClasses: number
   iouThreshold: number
   anchors: Point[]
+  classes: string[]
   meanRgb?: [number, number, number]
   withClassScores?: boolean
 }
@@ -20,12 +20,17 @@ export function validateConfig(config: any) {
     throw new Error(`config.withSeparableConvs has to be a boolean, have: ${config.withSeparableConvs}`)
   }
 
-  if (!isNumber(config.numClasses) || config.numClasses < 1) {
-    throw new Error(`config.numClasses has to be a number < 1, have: ${config.numClasses}`)
-  }
-
   if (!isNumber(config.iouThreshold) || config.iouThreshold < 0 || config.iouThreshold > 1.0) {
     throw new Error(`config.iouThreshold has to be a number between [0, 1], have: ${config.iouThreshold}`)
+  }
+
+  if (
+    !Array.isArray(config.classes)
+    || !config.classes.length
+    || !config.classes.every((c: any) => typeof c === 'string')
+  ) {
+
+    throw new Error(`config.classes has to be an array class names: string[], have: ${JSON.stringify(config.classes)}`)
   }
 
   if (

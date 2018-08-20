@@ -1,0 +1,17 @@
+{
+  "withSeparableConvs": false,
+  "iouThreshold": 0.4,
+  "anchors": [
+    { "x": 1.08, "y": 1.19 },
+    { "x": 3.42, "y": 4.41 },
+    { "x": 6.63, "y": 11.38 },
+    { "x": 9.42, "y": 5.11 },
+    { "x": 16.62, "y": 10.52 }
+  ],
+  "classes": [
+    "aeroplane", "bicycle", "bird", "boat", "bottle",
+    "bus", "car", "cat", "chair", "cow",
+    "diningtable", "dog", "horse", "motorbike", "person",
+    "pottedplant", "sheep", "sofa", "train", "tvmonitor"
+  ]
+}

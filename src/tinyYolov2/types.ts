@@ -1,7 +1,8 @@
 import * as tf from '@tensorflow/tfjs-core';
 
+import { BoundingBox } from '../BoundingBox';
 import { ConvParams } from '../commons/types';
-import { Point } from '../Point';
+import { IRect } from '../Rect';
 
 export type BatchNorm = {
   sub: tf.Tensor1D
@@ -45,7 +46,17 @@ export type TinyYolov2ForwardParams = {
   scoreThreshold?: number
 }
 
-export type PostProcessingParams = {
-  scoreThreshold?: number
-  paddings: Point
+export type GridPosition = {
+  row: number
+  col: number
+  anchor: number
+}
+
+export type GroundTruthWithGridPosition = GridPosition & {
+  box: BoundingBox
+  classLabel: number
+}
+
+export type GroundTruth = IRect & {
+  classLabel: number
 }

@@ -9,6 +9,14 @@ export type TinyYolov2Config = {
   withClassScores?: boolean
 }
 
+export type TinyYolov2TrainableConfig = TinyYolov2Config & {
+  // hyper params for training
+  noObjectScale: number
+  objectScale: number
+  coordScale: number
+  classScale: number
+}
+
 const isNumber = (arg: any) => typeof arg === 'number'
 
 export function validateConfig(config: any) {
@@ -50,4 +58,12 @@ export function validateConfig(config: any) {
 
     throw new Error(`config.meanRgb has to be an array of shape [number, number, number], have: ${JSON.stringify(config.meanRgb)}`)
   }
+}
+
+export function validateTrainConfig(config: any): TinyYolov2TrainableConfig {
+  if (![config.noObjectScale, config.objectScale, config.coordScale, config.classScale].every(isNumber)) {
+    throw new Error(`for training you have to specify noObjectScale, objectScale, coordScale, classScale parameters in your config.json file`)
+  }
+
+  return config
 }

@@ -5,7 +5,12 @@ import { Dimensions } from '../types';
 import { getNumCells } from './const';
 import { GridPosition, GroundTruthWithGridPosition } from './types';
 
-export function computeIous(predBoxes: GroundTruthWithGridPosition[], groundTruthBoxes: GroundTruthWithGridPosition[], reshapedImgDims: Dimensions) {
+export function computeIous(
+  predBoxes: GroundTruthWithGridPosition[],
+  groundTruthBoxes: GroundTruthWithGridPosition[],
+  reshapedImgDims: Dimensions,
+  gridCellEncodingSize: number
+) {
 
   const inputSize = Math.max(reshapedImgDims.width, reshapedImgDims.height)
   const numCells = getNumCells(inputSize)
@@ -15,7 +20,7 @@ export function computeIous(predBoxes: GroundTruthWithGridPosition[], groundTrut
       && p1.col === p2.col
       && p1.anchor === p2.anchor
 
-  const ious = tf.zeros([numCells, numCells, 25])
+  const ious = tf.zeros([numCells, numCells, gridCellEncodingSize])
   const buf = ious.buffer()
 
   groundTruthBoxes.forEach(({ row, col, anchor, box }) => {

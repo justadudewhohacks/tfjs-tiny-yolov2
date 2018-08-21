@@ -6,12 +6,17 @@ import { CELL_SIZE, getNumCells } from './const';
 import { GroundTruthWithGridPosition } from './types';
 
 
-export function computeBoxAdjustments(groundTruthBoxes: GroundTruthWithGridPosition[], anchors: Point[], reshapedImgDims: Dimensions) {
+export function computeBoxAdjustments(
+  groundTruthBoxes: GroundTruthWithGridPosition[],
+  anchors: Point[],
+  reshapedImgDims: Dimensions,
+  gridCellEncodingSize: number
+) {
 
   const inputSize = Math.max(reshapedImgDims.width, reshapedImgDims.height)
   const numCells = getNumCells(inputSize)
 
-  const adjustments = tf.zeros([numCells, numCells, 25])
+  const adjustments = tf.zeros([numCells, numCells, gridCellEncodingSize])
   const buf = adjustments.buffer()
 
   groundTruthBoxes.forEach(({ row, col, anchor, box }) => {

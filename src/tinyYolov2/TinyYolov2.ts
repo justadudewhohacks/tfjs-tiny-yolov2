@@ -10,7 +10,7 @@ import { ObjectDetection } from '../ObjectDetection';
 import { toNetInput } from '../toNetInput';
 import { Dimensions, TNetInput } from '../types';
 import { sigmoid } from '../utils';
-import { assignGroundTruthToAnchors } from './assignBoxesToAnchors';
+import { assignGroundTruthToAnchors } from './assignGroundTruthToAnchors';
 import { computeBoxAdjustments } from './computeBoxAdjustments';
 import { computeIous } from './computeIous';
 import { TinyYolov2Config, validateConfig, validateTrainConfig } from './config';
@@ -301,7 +301,8 @@ export class TinyYolov2 extends NeuralNetwork<NetParams> {
       const ious = computeIous(
         predBoxes,
         groundTruthBoxes,
-        reshapedImgDims
+        reshapedImgDims,
+        this.boxEncodingSize * this.config.anchors.length
       )
 
       return tf.sub(ious, tf.sigmoid(outTensor))
@@ -313,7 +314,8 @@ export class TinyYolov2 extends NeuralNetwork<NetParams> {
       const boxAdjustments = computeBoxAdjustments(
         groundTruthBoxes,
         this.config.anchors,
-        reshapedImgDims
+        reshapedImgDims,
+        this.boxEncodingSize * this.config.anchors.length
       )
 
       return tf.sub(boxAdjustments, outTensor)

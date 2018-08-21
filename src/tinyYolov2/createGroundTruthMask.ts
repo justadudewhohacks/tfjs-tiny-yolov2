@@ -16,7 +16,7 @@ export function createGroundTruthMask(
   const mask = tf.zeros([numCells, numCells, gridCellEncodingSize])
   const buf = mask.buffer()
 
-  groundTruthBoxes.forEach(({ row, col, anchor, classLabel }) => {
+  groundTruthBoxes.forEach(({ row, col, anchor }) => {
     const anchorOffset = boxEncodingSize * anchor
     for (let i = 0; i < numAnchors; i++) {
       buf.set(1, row, col, anchorOffset + i)

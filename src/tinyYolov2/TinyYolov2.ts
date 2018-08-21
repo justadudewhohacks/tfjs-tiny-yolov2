@@ -10,19 +10,14 @@ import { ObjectDetection } from '../ObjectDetection';
 import { toNetInput } from '../toNetInput';
 import { Dimensions, TNetInput } from '../types';
 import { sigmoid } from '../utils';
-import { assignGroundTruthToAnchors } from './assignGroundTruthToAnchors';
-import { computeBoxAdjustments } from './computeBoxAdjustments';
-import { computeIous } from './computeIous';
 import { TinyYolov2Config, validateConfig, validateTrainConfig } from './config';
 import { INPUT_SIZES } from './const';
 import { convWithBatchNorm } from './convWithBatchNorm';
-import { createCoordAndScoreMasks } from './createCoordAndScoreMasks';
-import { createGroundTruthMask } from './createGroundTruthMask';
-import { createOneHotClassScoreMask } from './createOneHotClassScoreMask';
 import { extractParams } from './extractParams';
 import { getDefaultParams } from './getDefaultParams';
 import { loadQuantizedParams } from './loadQuantizedParams';
-import { GroundTruth, GroundTruthWithGridPosition, NetParams, TinyYolov2ForwardParams } from './types';
+import { TinyYolov2LossFunction } from './TinyYolov2LossFunction';
+import { GroundTruth, NetParams, TinyYolov2ForwardParams } from './types';
 
 export class TinyYolov2 extends NeuralNetwork<NetParams> {
 
@@ -136,7 +131,7 @@ export class TinyYolov2 extends NeuralNetwork<NetParams> {
     return detections
   }
 
-  public computeLoss(outTensor: tf.Tensor4D, groundTruth: GroundTruth[], reshapedImgDims: Dimensions) {
+  public computeLoss(outputTensor: tf.Tensor4D, groundTruth: GroundTruth[], reshapedImgDims: Dimensions) {
 
     const config = validateTrainConfig(this.config)
 
@@ -146,60 +141,12 @@ export class TinyYolov2 extends NeuralNetwork<NetParams> {
       throw new Error(`computeLoss - invalid inputSize: ${inputSize}`)
     }
 
-    const groundTruthBoxes = assignGroundTruthToAnchors(
-      groundTruth,
-      this.config.anchors,
-      reshapedImgDims
-    )
+    const predictedBoxes = this.extractBoxes(outputTensor, reshapedImgDims)
 
-    const groundTruthMask = createGroundTruthMask(groundTruthBoxes, inputSize, this.boxEncodingSize, this.config.anchors.length)
-    const { coordMask, scoreMask } = createCoordAndScoreMasks(inputSize, this.boxEncodingSize, this.config.anchors.length)
-
-    const noObjectLossMask = tf.tidy(() => tf.mul(scoreMask, tf.sub(tf.scalar(1), groundTruthMask))) as tf.Tensor4D
-    const objectLossMask = tf.tidy(() => tf.mul(scoreMask, groundTruthMask)) as tf.Tensor4D
-    const coordLossMask = tf.tidy(() => tf.mul(coordMask, groundTruthMask)) as tf.Tensor4D
-
-    const squaredSumOverMask = (mask: tf.Tensor<tf.Rank>, lossTensor: tf.Tensor4D) =>
-      tf.tidy(() => tf.sum(tf.square(tf.mul(mask, lossTensor))))
-
-    const computeLossTerm = (scale: number, mask: tf.Tensor<tf.Rank>, lossTensor: tf.Tensor4D) =>
-      tf.tidy(() => tf.mul(tf.scalar(scale), squaredSumOverMask(mask, lossTensor)))
-
-    const noObjectLoss = computeLossTerm(
-      config.noObjectScale,
-      noObjectLossMask,
-      this.computeNoObjectLoss(outTensor)
-    )
-
-    const objectLoss = computeLossTerm(
-      config.objectScale,
-      objectLossMask,
-      this.computeObjectLoss(groundTruthBoxes, outTensor, reshapedImgDims)
-    )
-
-    const coordLoss = computeLossTerm(
-      config.coordScale,
-      coordLossMask,
-      this.computeCoordLoss(groundTruthBoxes, outTensor, reshapedImgDims)
-    )
-
-    const classLoss = this.withClassScores
-      ? computeLossTerm(
-          config.classScale,
-          tf.scalar(1),
-          this.computeClassLoss(groundTruthBoxes, outTensor)
-        )
-      : tf.scalar(0)
-
-    const totalLoss = tf.tidy(() => noObjectLoss.add(objectLoss).add(coordLoss).add(classLoss))
-
-    return {
-      noObjectLoss,
-      objectLoss,
-      coordLoss,
-      classLoss,
-      totalLoss
-    }
+    return tf.tidy(() => {
+      const lossFunction = new TinyYolov2LossFunction(outputTensor, groundTruth, predictedBoxes, reshapedImgDims, config)
+      return lossFunction.computeLoss()
+    })
   }
 
   protected loadQuantizedParams(modelUri: string | undefined) {
@@ -285,54 +232,5 @@ export class TinyYolov2 extends NeuralNetwork<NetParams> {
         classLabel
       }))
       .reduce((max, curr) => max.classScore > curr.classScore ? max : curr)
-  }
-
-  private computeNoObjectLoss(outTensor: tf.Tensor4D): tf.Tensor4D {
-    return tf.tidy(() => tf.sigmoid(outTensor))
-  }
-
-  private computeObjectLoss(groundTruthBoxes: GroundTruthWithGridPosition[], outTensor: tf.Tensor4D, reshapedImgDims: Dimensions): tf.Tensor4D {
-    return tf.tidy(() => {
-      const predBoxes = this.extractBoxes(
-        outTensor,
-        reshapedImgDims
-      )
-
-      const ious = computeIous(
-        predBoxes,
-        groundTruthBoxes,
-        reshapedImgDims,
-        this.boxEncodingSize * this.config.anchors.length
-      )
-
-      return tf.sub(ious, tf.sigmoid(outTensor))
-    })
-  }
-
-  private computeCoordLoss(groundTruthBoxes: GroundTruthWithGridPosition[], outTensor: tf.Tensor4D, reshapedImgDims: Dimensions): tf.Tensor4D {
-    return tf.tidy(() => {
-      const boxAdjustments = computeBoxAdjustments(
-        groundTruthBoxes,
-        this.config.anchors,
-        reshapedImgDims,
-        this.boxEncodingSize * this.config.anchors.length
-      )
-
-      return tf.sub(boxAdjustments, outTensor)
-    })
-  }
-
-  private computeClassLoss(groundTruthBoxes: GroundTruthWithGridPosition[], outTensor: tf.Tensor4D): tf.Tensor4D {
-
-    const numCells = outTensor.shape[1]
-    const numBoxes = this.config.anchors.length
-
-    return tf.tidy(() => {
-      const gtClassScores = createOneHotClassScoreMask(groundTruthBoxes, numCells, this.config.classes.length, this.config.anchors.length)
-      const reshaped = outTensor.reshape([numCells, numCells, numBoxes, this.boxEncodingSize])
-      const classScores = tf.softmax(reshaped.slice([0, 0, 0, 5], [numCells, numCells, numBoxes, this.config.classes.length]), 3)
-
-      return tf.sub(gtClassScores, classScores)
-    })
   }
 }

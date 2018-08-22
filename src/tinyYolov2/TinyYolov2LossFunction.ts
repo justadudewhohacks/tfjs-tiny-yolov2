@@ -17,10 +17,10 @@ export class TinyYolov2LossFunction {
   private _groundTruth: GroundTruthWithGridPosition[]
   private _predictedBoxes: GroundTruthWithGridPosition[]
 
-  private noObjectLossMask: tf.Tensor4D
-  private objectLossMask: tf.Tensor4D
-  private coordLossMask: tf.Tensor4D
-  private groundTruthClassScoresMask: tf.Tensor4D
+  public noObjectLossMask: tf.Tensor4D
+  public objectLossMask: tf.Tensor4D
+  public coordLossMask: tf.Tensor4D
+  public groundTruthClassScoresMask: tf.Tensor4D
 
   constructor(
     outputTensor: tf.Tensor4D,
@@ -32,8 +32,10 @@ export class TinyYolov2LossFunction {
     this._config = config
     this._reshapedImgDims = reshapedImgDims
     this._outputTensor = outputTensor
-    this._groundTruth = this.assignGroundTruthToAnchors(groundTruth)
     this._predictedBoxes = predictedBoxes
+
+    this.validateGroundTruthBoxes(groundTruth)
+    this._groundTruth = this.assignGroundTruthToAnchors(groundTruth)
 
     const groundTruthMask = this.createGroundTruthMask()
     const { coordMask, scoreMask } = this.createCoordAndScoreMasks()
@@ -171,6 +173,18 @@ export class TinyYolov2LossFunction {
 
   private squaredSumOverMask(mask: tf.Tensor<tf.Rank>, lossTensor: tf.Tensor4D): tf.Tensor4D {
     return tf.tidy(() => tf.sum(tf.square(tf.mul(mask, lossTensor))))
+  }
+
+  private validateGroundTruthBoxes(groundTruth: GroundTruth[]) {
+    groundTruth.forEach(({ x, y, width, height, classLabel }) => {
+      if (typeof classLabel !== 'number' || classLabel < 0 || classLabel > (this.config.classes.length - 1)) {
+        throw new Error(`invalid ground truth data, expected classLabel to be a number in [0, ${this.config.classes.length - 1}]`)
+      }
+
+      if (x < 0 || x > 1 || y < 0 || y > 1 || width < 0 || (x + width) > 1 || height < 0 || (y + height) > 1) {
+        throw new Error(`invalid ground truth data, box is out of image boundaries ${JSON.stringify({ x, y, width, height})}`)
+      }
+    })
   }
 
   private assignGroundTruthToAnchors(groundTruth: GroundTruth[]) {

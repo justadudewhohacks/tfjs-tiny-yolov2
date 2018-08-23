@@ -28,8 +28,10 @@ export function createFakeLossFunction(numCells: number, groundTruth: GroundTrut
   const numBoxes = fakeConfig.anchors.length
   const numClasses = fakeConfig.classes.length
 
+  const outputTensor = tf.ones([1, numCells, numCells, numBoxes * (5 + numClasses)]) as tf.Tensor4D
+
   return new TinyYolov2LossFunction(
-    tf.ones([1, numCells, numCells, numBoxes * (5 + numClasses)]) as tf.Tensor4D,
+    outputTensor,
     groundTruth,
     predictedBoxes,
     { width: numCells * 32, height: numCells * 32 },

@@ -20,7 +20,8 @@ export class TinyYolov2LossFunction {
 
   public noObjectLossMask: tf.Tensor4D
   public objectLossMask: tf.Tensor4D
-  public coordLossMask: tf.Tensor4D
+  public coordBoxOffsetMask: tf.Tensor4D
+  public coordBoxSizeMask: tf.Tensor4D
   public groundTruthClassScoresMask: tf.Tensor4D
 
   constructor(
@@ -39,12 +40,15 @@ export class TinyYolov2LossFunction {
     this._groundTruth = this.assignGroundTruthToAnchors(groundTruth)
 
     const groundTruthMask = this.createGroundTruthMask()
-    const { coordMask, scoreMask } = this.createCoordAndScoreMasks()
+    const { coordBoxOffsetMask, coordBoxSizeMask, scoreMask } = this.createCoordAndScoreMasks()
 
     this.noObjectLossMask = tf.tidy(() => tf.mul(scoreMask, tf.sub(tf.scalar(1), groundTruthMask))) as tf.Tensor4D
     this.objectLossMask = tf.tidy(() => tf.mul(scoreMask, groundTruthMask)) as tf.Tensor4D
-    this.coordLossMask = tf.tidy(() => tf.mul(coordMask, groundTruthMask)) as tf.Tensor4D
-    this.groundTruthClassScoresMask = tf.tidy(() => tf.mul(tf.sub(tf.scalar(1), tf.add(coordMask, scoreMask)), groundTruthMask)) as tf.Tensor4D
+    this.coordBoxOffsetMask = tf.tidy(() => tf.mul(coordBoxOffsetMask, groundTruthMask)) as tf.Tensor4D
+    this.coordBoxSizeMask = tf.tidy(() => tf.mul(coordBoxSizeMask, groundTruthMask)) as tf.Tensor4D
+
+    const classScoresMask = tf.tidy(() => tf.sub(tf.scalar(1), coordBoxOffsetMask.add(coordBoxSizeMask).add(scoreMask)))
+    this.groundTruthClassScoresMask = tf.tidy(() => tf.mul(classScoresMask, groundTruthMask)) as tf.Tensor4D
   }
 
   public get config(): TinyYolov2TrainableConfig {
@@ -95,6 +99,10 @@ export class TinyYolov2LossFunction {
     return this.boxEncodingSize * this.numBoxes
   }
 
+  public toOutputTensorShape(tensor: tf.Tensor) {
+    return tf.tidy(() => tensor.reshape([1, this.numCells, this.numCells, this.gridCellEncodingSize]))
+  }
+
   public computeLoss() {
     return tf.tidy(() => {
 
@@ -121,7 +129,7 @@ export class TinyYolov2LossFunction {
     return tf.tidy(() =>
       this.computeLossTerm(
         this.config.noObjectScale,
-        this.noObjectLossMask,
+        this.toOutputTensorShape(this.noObjectLossMask),
         tf.sigmoid(this.outputTensor)
       )
     )
@@ -131,27 +139,63 @@ export class TinyYolov2LossFunction {
     return tf.tidy(() =>
       this.computeLossTerm(
         this.config.objectScale,
-        this.objectLossMask,
-        tf.sub(this.computeIous(), tf.sigmoid(this.outputTensor))
+        this.toOutputTensorShape(this.objectLossMask),
+        tf.sub(this.toOutputTensorShape(this.computeIous()), tf.sigmoid(this.outputTensor))
       )
     )
   }
 
 
   // TODO: apply sigmoid to outputTensor x, y
+  /*
   public computeCoordLoss(): tf.Tensor4D {
     return tf.tidy(() =>
       this.computeLossTerm(
         this.config.coordScale,
-        this.coordLossMask,
-        tf.sub(this.computeBoxAdjustments(), this.outputTensor)
+        this.coordLossMask.reshape([1, this.numCells, this.numCells, this.gridCellEncodingSize]),
+        tf.sub(this.computeBoxAdjustments().reshape([1, this.numCells, this.numCells, this.gridCellEncodingSize]), this.outputTensor)
+      )
+    )
+  }
+  */
+
+  public computeCoordLoss(): tf.Tensor4D {
+    return tf.tidy(() =>
+      this.computeLossTerm(
+        this.config.coordScale,
+        tf.scalar(1),
+        tf.add(this.computeCoordBoxOffsetError(), this.computeCoordBoxSizeError())
       )
     )
   }
 
+  public computeCoordBoxOffsetError(): tf.Tensor4D {
+    return tf.tidy(() => {
+
+      const mask = this.toOutputTensorShape(this.coordBoxOffsetMask)
+      const gtBoxOffsets = tf.mul(mask, this.toOutputTensorShape(this.computeCoordBoxOffsets()))
+      const predBoxOffsets = tf.mul(mask, tf.sigmoid(this.outputTensor))
+
+      return tf.sub(gtBoxOffsets, predBoxOffsets)
+
+    })
+  }
+
+  public computeCoordBoxSizeError(): tf.Tensor4D {
+    return tf.tidy(() => {
+
+      const mask = this.toOutputTensorShape(this.coordBoxSizeMask)
+      const gtBoxSizes = tf.mul(mask, this.toOutputTensorShape(this.computeCoordBoxSizes()))
+      const predBoxSizes = tf.mul(mask, this.outputTensor)
+
+      return tf.sub(gtBoxSizes, predBoxSizes)
+
+    })
+  }
+
   public computeClassLoss(): tf.Tensor4D {
     const classLossTensor = tf.tidy(() => {
-      const groundTruthClassValues = tf.mul(this.outputTensor, this.groundTruthClassScoresMask)
+      const groundTruthClassValues = tf.mul(this.outputTensor, this.groundTruthClassScoresMask.reshape([1, this.numCells, this.numCells, this.gridCellEncodingSize]))
       //const reshaped = groundTruthClassValues.reshape([this.numCells, this.numCells, numBoxes, this.boxEncodingSize])
 
       // TBD
@@ -223,15 +267,12 @@ export class TinyYolov2LossFunction {
 
   private createGroundTruthMask() {
 
-    const gridCellEncodingSize = this.boxEncodingSize * this.numBoxes
-
-    const mask = tf.zeros([this.numCells, this.numCells, gridCellEncodingSize])
+    const mask = tf.zeros([this.numCells, this.numCells, this.numBoxes, this.boxEncodingSize])
     const buf = mask.buffer()
 
     this.groundTruth.forEach(({ row, col, anchor }) => {
-      const anchorOffset = this.boxEncodingSize * anchor
       for (let i = 0; i < this.boxEncodingSize; i++) {
-        buf.set(1, row, col, anchorOffset + i)
+        buf.set(1, row, col, anchor, i)
       }
     })
 
@@ -239,27 +280,31 @@ export class TinyYolov2LossFunction {
   }
 
   private createCoordAndScoreMasks() {
+    return tf.tidy(() => {
 
-    const gridCellEncodingSize = this.boxEncodingSize * this.numBoxes
+      const coordBoxOffsetMask = tf.zeros([this.numCells, this.numCells, this.numBoxes, this.boxEncodingSize])
+      const coordBoxSizeMask = tf.zeros([this.numCells, this.numCells, this.numBoxes, this.boxEncodingSize])
+      const scoreMask = tf.zeros([this.numCells, this.numCells, this.numBoxes, this.boxEncodingSize])
 
-    const coordMask = tf.zeros([this.numCells, this.numCells, gridCellEncodingSize])
-    const scoreMask = tf.zeros([this.numCells, this.numCells, gridCellEncodingSize])
-    const coordBuf = coordMask.buffer()
-    const scoreBuf = scoreMask.buffer()
+      const coordBoxOffsetBuf = coordBoxOffsetMask.buffer()
+      const coordBoxSizeBuf = coordBoxSizeMask.buffer()
+      const scoreBuf = scoreMask.buffer()
 
-    for (let row = 0; row < this.numCells; row++) {
-      for (let col = 0; col < this.numCells; col++) {
-        for (let anchor = 0; anchor < this.numBoxes; anchor++) {
-          const anchorOffset = this.boxEncodingSize * anchor
-          for (let i = 0; i < 4; i++) {
-            coordBuf.set(1, row, col, anchorOffset + i)
+      for (let row = 0; row < this.numCells; row++) {
+        for (let col = 0; col < this.numCells; col++) {
+          for (let anchor = 0; anchor < this.numBoxes; anchor++) {
+            coordBoxOffsetBuf.set(1, row, col, anchor, 0)
+            coordBoxOffsetBuf.set(1, row, col, anchor, 1)
+            coordBoxSizeBuf.set(1, row, col, anchor, 2)
+            coordBoxSizeBuf.set(1, row, col, anchor, 3)
+            scoreBuf.set(1, row, col, anchor, 4)
           }
-          scoreBuf.set(1, row, col, anchorOffset + 4)
         }
       }
-    }
 
-    return { coordMask, scoreMask }
+      return { coordBoxOffsetMask, coordBoxSizeMask, scoreMask }
+    })
+
   }
 
   private createOneHotClassScoreMask() {
@@ -305,13 +350,13 @@ export class TinyYolov2LossFunction {
     return ious
   }
 
-  public computeBoxAdjustments() {
+  public computeCoordBoxOffsets() {
 
-    const adjustments = tf.zeros([this.numCells, this.numCells, this.gridCellEncodingSize])
-    const buf = adjustments.buffer()
+    const offsets = tf.zeros([this.numCells, this.numCells, this.numBoxes, this.boxEncodingSize])
+    const buf = offsets.buffer()
 
     this.groundTruth.forEach(({ row, col, anchor, box }) => {
-      const { left, top, right, bottom, width, height } = box.rescale(this.reshapedImgDims)
+      const { left, top, right, bottom } = box.rescale(this.reshapedImgDims)
 
       const centerX = (left + right) / 2
       const centerY = (top + bottom) / 2
@@ -324,17 +369,29 @@ export class TinyYolov2LossFunction {
       //const dy = inverseSigmoid(Math.min(0.999, Math.max(0.001, dCenterY / CELL_SIZE)))
       const dx = dCenterX / CELL_SIZE
       const dy = dCenterY / CELL_SIZE
-      const dw = Math.log((width / CELL_SIZE) / this.anchors[anchor].x)
-      const dh = Math.log((height / CELL_SIZE) / this.anchors[anchor].y)
 
-      const anchorOffset = this.boxEncodingSize * anchor
-      buf.set(dx, row, col, anchorOffset + 0)
-      buf.set(dy, row, col, anchorOffset + 1)
-      buf.set(dw, row, col, anchorOffset + 2)
-      buf.set(dh, row, col, anchorOffset + 3)
+      buf.set(dx, row, col, anchor, 0)
+      buf.set(dy, row, col, anchor, 1)
     })
 
-    return adjustments
+    return offsets
+  }
+
+  public computeCoordBoxSizes() {
+
+    const sizes = tf.zeros([this.numCells, this.numCells, this.numBoxes, this.boxEncodingSize])
+    const buf = sizes.buffer()
+
+    this.groundTruth.forEach(({ row, col, anchor, box }) => {
+      const { width, height } = box.rescale(this.reshapedImgDims)
+      const dw = Math.log(width / (this.anchors[anchor].x * CELL_SIZE))
+      const dh = Math.log(height / (this.anchors[anchor].y * CELL_SIZE))
+
+      buf.set(dw, row, col, anchor, 2)
+      buf.set(dh, row, col, anchor, 3)
+    })
+
+    return sizes
   }
 
 }

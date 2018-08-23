@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <script src="tiny-yolo-v2.js"></script>
+  <script src="commons.js"></script>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.100.2/css/materialize.css">
+  <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.100.2/js/materialize.min.js"></script>
+</head>
+<body>
+  <div id="navbar"></div>
+  <div class="center-content page-container">
+    <div class="progress" id="loader">
+      <div class="indeterminate"></div>
+    </div>
+    <div style="position: relative" class="margin">
+      <img id="inputImg" src="" style="max-width: 800px;" />
+      <canvas id="overlay" />
+    </div>
+    <div class="row side-by-side">
+      <div id="selectList"></div>
+      <div class="row">
+        <label for="imgUrlInput">Get image from URL:</label>
+        <input id="imgUrlInput" type="text" class="bold">
+      </div>
+      <button
+        class="waves-effect waves-light btn"
+        onclick="loadImageFromUrl()"
+      >
+        Ok
+      </button>
+    </div>
+    <div class="row side-by-side">
+      <div class="row input-field" style="margin-right: 20px;">
+        <select id="sizeType">
+          <option value="128">128 x 128</option>
+          <option value="160">160 x 160</option>
+          <option value="224">224 x 224</option>
+          <option value="320">320 x 320</option>
+          <option value="416">416 x 416</option>
+          <option value="608">608 x 608</option>
+        </select>
+        <label>Input Size</label>
+      </div>
+      <div class="row">
+        <label for="scoreThreshold">Score Threshold:</label>
+        <input disabled value="0.5" id="scoreThreshold" type="text" class="bold">
+      </div>
+      <button
+        class="waves-effect waves-light btn"
+        onclick="onDecreaseThreshold()"
+      >
+        <i class="material-icons left">-</i>
+      </button>
+      <button
+        class="waves-effect waves-light btn"
+        onclick="onIncreaseThreshold()"
+      >
+        <i class="material-icons left">+</i>
+      </button>
+    </div>
+    <div class="row">
+      <label for="imgByNr">Enter image NR: </label>
+      <input id="imgByNr" type="text" class="bold" value="0"/>
+    </div>
+  </div>
+
+  <script>
+    let scoreThreshold = 0.5
+    let sizeType = 608
+
+    const vocClasses = [
+      "aeroplane", "bicycle", "bird", "boat", "bottle",
+      "bus", "car", "cat", "chair", "cow",
+      "diningtable", "dog", "horse", "motorbike", "person",
+      "pottedplant", "sheep", "sofa", "train", "tvmonitor"
+    ]
+
+    function onKeyDown(e) {
+      e.target.value = (
+        parseInt(e.target.value) + (e.keyCode === 38 ? 1 : (e.keyCode === 40 ? -1 : 0))
+      ) || e.target.value || 0
+
+
+      const imgUri = window.imgUris[e.target.value]
+
+      console.log(imgUri)
+      onSelectionChanged(imgUri, window.boxJsonUris[e.target.value])
+    }
+
+    function onIncreaseThreshold() {
+      scoreThreshold = Math.min(yolo.round(scoreThreshold + 0.1), 1.0)
+      $('#scoreThreshold').val(scoreThreshold)
+      updateResults()
+    }
+
+    function onDecreaseThreshold() {
+      scoreThreshold = Math.max(yolo.round(scoreThreshold - 0.1), 0.1)
+      $('#scoreThreshold').val(scoreThreshold)
+      updateResults()
+    }
+
+    function onSizeTypeChanged(e, c) {
+      sizeType = e.target.value
+      $('#sizeType').val(sizeType)
+      updateResults()
+    }
+
+    async function loadImageFromUrl(url) {
+      const img = await requestExternalImage($('#imgUrlInput').val())
+      $('#inputImg').get(0).src = img.src
+      updateResults()
+    }
+
+    async function updateResults() {
+      const inputImgEl = $('#inputImg').get(0)
+      const { width, height } = inputImgEl
+      const canvas = $('#overlay').get(0)
+      canvas.width = width
+      canvas.height = height
+
+      const forwardParams = {
+        inputSize: parseInt(sizeType),
+        scoreThreshold
+      }
+
+      const detections = await net.detect(inputImgEl, forwardParams)
+      console.log(detections)
+      yolo.drawDetection('overlay', detections.map(det => det.forSize(width, height)))
+    }
+
+    async function onSelectionChanged(imgUri, boxJsonUri) {
+      const imgBuf = await fetchImage(imgUri)
+      const img = await yolo.bufferToImage(imgBuf)
+
+      $('#inputImg').get(0).src = img.src
+
+      updateResults()
+
+      const groundTruth = (await fetch(boxJsonUri).then(res => res.json()))
+        .map(({ x, y, width, height, label }) => {
+          return new yolo.ObjectDetection(
+            1.0,
+            1.0,
+            vocClasses[label],
+            new yolo.Rect(x, y, width, height),
+            img
+          )
+        })
+
+      yolo.drawDetection('overlay', groundTruth, { boxColor: 'green' })
+    }
+
+    async function fetchTrainDataFilenames() {
+      return fetch('/voc_train_filenames').then(res => res.json())
+    }
+
+    async function loadNetWeights(uri) {
+      return new Float32Array(await (await fetch(uri)).arrayBuffer())
+    }
+
+    async function run() {
+      $('#imgByNr').keydown(onKeyDown)
+
+      const config = await fetchJson(`tmp/voc_separable_conv_model_config.json`)
+      net = new yolo.TinyYolov2(config)
+      await net.load(await loadNetWeights(`tmp/foo2`))
+
+      window.boxJsonUris = await fetchTrainDataFilenames()
+      window.imgUris = window.boxJsonUris.map(f => f.replace('.json', '.jpg'))
+
+      $('#loader').hide()
+    }
+
+    $(document).ready(function() {
+      const sizeTypeSelect = $('#sizeType')
+      sizeTypeSelect.val(sizeType)
+      sizeTypeSelect.on('change', onSizeTypeChanged)
+      sizeTypeSelect.material_select()
+      run()
+    })
+
+  </script>
+</body>
+</html>

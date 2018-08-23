@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <script src="tiny-yolo-v2.js"></script>
+  <script src="commons.js"></script>
+  <script src="trainUtils.js"></script>
+  <script src="FileSaver.js"></script>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.100.2/css/materialize.css">
+  <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.100.2/js/materialize.min.js"></script>
+</head>
+<body>
+
+  <script>
+    tf = yolo.tf
+
+    const debug = false
+    const logTrainSteps = true
+
+    const optimizer = tf.train.adam(0.001, 0.9, 0.999, 1e-8)
+
+    const trainSizes = [160, 224, 320, 416]
+    //const trainSizes = [416]
+
+    const startEpoch = 0
+    const maxEpoch = Infinity
+
+    window.saveEveryNthSample = 100
+
+    const modelCheckpoint = '/tmp/initial-glorot.weights'
+
+    async function loadNetWeights(uri) {
+      return new Float32Array(await (await fetch(uri)).arrayBuffer())
+    }
+
+    async function fetchTrainDataFilenames() {
+      return fetch('/voc_train_filenames').then(res => res.json())
+    }
+
+    function filterGroundTruthBoxes(groundTruth, inputSize, reshapedImgDims) {
+      const { height: imgHeight, width: imgWidth } = reshapedImgDims
+
+      const scaleFactor = inputSize / Math.max(imgHeight, imgWidth)
+      return groundTruth.filter(({ x, y, width, height }) => {
+        const box = (new yolo.Rect(x, y, width, height))
+          .toBoundingBox()
+          .rescale({ height: imgHeight, width: imgWidth })
+          .rescale(scaleFactor)
+
+        const isTooTiny = box.width < 32 || box.height < 32
+        if (isTooTiny && window.debug) {
+          log(`skipping box for input size ${inputSize}: (${Math.floor(box.width)} x ${Math.floor(box.height)})`)
+        }
+        return !isTooTiny
+      })
+    }
+
+    function onBatchProcessed(epoch, dataIdx, inputSize) {
+      const idx = dataIdx + 1
+      if (inputSize === trainSizes[trainSizes.length - 1] && (idx % window.saveEveryNthSample) === 0) {
+        saveWeights(window.net, `voc_${idx}_e${epoch}.weights`)
+      }
+    }
+
+    async function run() {
+      window.boxJsonUris = await fetchTrainDataFilenames()
+
+      const config = await fetchJson(`/tmp/voc_separable_conv_model_config.json`)
+      window.net = new yolo.TinyYolov2(config)
+
+      const weights = await loadNetWeights(modelCheckpoint)
+
+      await window.net.load(weights)
+      window.net.variable()
+
+      for (let epoch = startEpoch; epoch < maxEpoch; epoch++) {
+
+        const shuffledInputs = shuffle(window.boxJsonUris)
+
+        for (let dataIdx = 0; dataIdx < shuffledInputs.length; dataIdx++) {
+
+          const boxJsonUri = shuffledInputs[dataIdx]
+          const img = await yolo.bufferToImage(await fetchImage(boxJsonUri.replace('.json', '.jpg')))
+          const groundTruth = (await fetchJson(boxJsonUri))
+            .map(gt => ({ ...gt, classLabel: gt.label }))
+
+          for (let sizeIdx = 0; sizeIdx < trainSizes.length; sizeIdx++) {
+
+            const inputSize = trainSizes[sizeIdx]
+            const reshapedImgDims = getReshapedSize(img, inputSize)
+            // square input images before creating tensor to prevent gpu memory overflow bug
+            const squareImg = imageToSquare(img, inputSize)
+
+            // skip groundTruthBoxes, which are too tiny
+            const filteredGroundTruthBoxes = filterGroundTruthBoxes(groundTruth, inputSize, reshapedImgDims)
+
+            if (!filteredGroundTruthBoxes.length) {
+              if (debug) {
+                log(`no boxes for input size ${inputSize}, ${groundTruthBoxes[batchIdx].length} boxes were too small`)
+              }
+              onBatchProcessed(epoch, dataIdx, inputSize)
+              continue
+            }
+
+            const netInput = await yolo.toNetInput(squareImg)
+
+            let ts = Date.now()
+            const loss = minimizeLoss(netInput, filteredGroundTruthBoxes, reshapedImgDims, dataIdx)
+
+            ts = Date.now() - ts
+            if (logTrainSteps) {
+              log(`trainStep time for dataIdx ${dataIdx} (${inputSize}): ${ts} ms`)
+            }
+
+            loss.dispose()
+            netInput.dispose()
+
+            onBatchProcessed(epoch, dataIdx, inputSize)
+
+            await tf.nextFrame()
+          }
+        }
+      }
+    }
+
+    function minimizeLoss(netInput, groundTruthBoxes, reshapedImgDims, dataIdx) {
+
+      const inputSize = Math.max(reshapedImgDims.height, reshapedImgDims.width)
+
+      return optimizer.minimize(() => {
+
+        const outTensor = window.net.forwardInput(netInput, inputSize)
+
+        const {
+          noObjectLoss,
+          objectLoss,
+          coordLoss,
+          classLoss,
+          totalLoss
+        } = window.net.computeLoss(
+          outTensor,
+          groundTruthBoxes,
+          reshapedImgDims
+        )
+
+        const losses = {
+          totalLoss: totalLoss.dataSync()[0],
+          noObjectLoss: noObjectLoss.dataSync()[0],
+          objectLoss: objectLoss.dataSync()[0],
+          coordLoss: coordLoss.dataSync()[0],
+          classLoss: classLoss.dataSync()[0]
+        }
+
+        if (logTrainSteps) {
+          log(`ground truth boxes: ${groundTruthBoxes.length} (${inputSize})`)
+          log(`noObjectLoss[${dataIdx}]: ${yolo.round(losses.noObjectLoss, 4)}`)
+          log(`objectLoss[${dataIdx}]: ${yolo.round(losses.objectLoss, 4)}`)
+          log(`coordLoss[${dataIdx}]: ${yolo.round(losses.coordLoss, 4)}`)
+          log(`classLoss[${dataIdx}]: ${yolo.round(losses.classLoss, 4)}`)
+          log(`totalLoss[${dataIdx}]: ${yolo.round(losses.totalLoss, 4)}`)
+        }
+
+        return totalLoss
+      }, true)
+    }
+
+  </script>
+</body>
+</html>

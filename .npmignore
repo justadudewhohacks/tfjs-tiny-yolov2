@@ -6,5 +6,6 @@ proto
 weights
 weights_uncompressed
 weights_unused
+train
 test
 tools

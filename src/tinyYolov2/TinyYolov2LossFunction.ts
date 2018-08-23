@@ -194,24 +194,26 @@ export class TinyYolov2LossFunction {
   }
 
   public computeClassLoss(): tf.Tensor4D {
-    const classLossTensor = tf.tidy(() => {
-      const groundTruthClassValues = tf.mul(this.outputTensor, this.groundTruthClassScoresMask.reshape([1, this.numCells, this.numCells, this.gridCellEncodingSize]))
-      //const reshaped = groundTruthClassValues.reshape([this.numCells, this.numCells, numBoxes, this.boxEncodingSize])
+    return tf.tidy(() => {
 
-      // TBD
-      const classScores = tf.softmax(groundTruthClassValues, 3)
-      const gtClassScores = this.createOneHotClassScoreMask()
+      const classLossTensor = tf.tidy(() => {
 
-      return tf.sub(gtClassScores, classScores)
-    })
+        const predClassScores = tf.mul(
+          tf.softmax(this.outputTensor.reshape([this.numCells, this.numCells, this.numBoxes, this.boxEncodingSize]), 3),
+          this.groundTruthClassScoresMask
+        )
 
-    return tf.tidy(() =>
-      this.computeLossTerm(
+        const gtClassScores = this.createOneHotClassScoreMask()
+
+        return tf.sub(gtClassScores, predClassScores)
+      })
+
+      return this.computeLossTerm(
         this.config.classScale,
         tf.scalar(1),
         classLossTensor as tf.Tensor4D
       )
-    )
+    })
   }
 
   private computeLossTerm(scale: number, mask: tf.Tensor<tf.Rank>, lossTensor: tf.Tensor4D): tf.Tensor4D {
@@ -308,13 +310,12 @@ export class TinyYolov2LossFunction {
   }
 
   private createOneHotClassScoreMask() {
-    const mask = tf.zeros([this.numCells, this.numCells, this.numBoxes * this.boxEncodingSize])
+    const mask = tf.zeros([this.numCells, this.numCells, this.numBoxes, this.boxEncodingSize])
     const buf = mask.buffer()
 
-    const classValuesOffset = 6
+    const classValuesOffset = 5
     this.groundTruth.forEach(({ row, col, anchor, classLabel }) => {
-      const anchorOffset = this.boxEncodingSize * anchor
-      buf.set(1, row, col, anchorOffset + classValuesOffset + classLabel)
+      buf.set(1, row, col, anchor, classValuesOffset + classLabel)
     })
 
     return mask

@@ -12,7 +12,7 @@ export function createFakeConfig(config: any = {}) {
     withSeparableConvs: true,
     iouThreshold: 0.4,
     anchors: [
-      { x: 1, y: 2 }
+      { x: 1, y: 1 }
     ],
     classes: ['foo', 'bar'],
     objectScale: 5,
@@ -24,12 +24,16 @@ export function createFakeConfig(config: any = {}) {
 }
 
 export function createFakeLossFunction(numCells: number, groundTruth: GroundTruth[], predictedBoxes: GroundTruthWithGridPosition[], config: any = {}) {
+  const fakeConfig = createFakeConfig(config)
+  const numBoxes = fakeConfig.anchors.length
+  const numClasses = fakeConfig.classes.length
+
   return new TinyYolov2LossFunction(
-    tf.ones([1, numCells, numCells, 7]) as tf.Tensor4D,
+    tf.ones([1, numCells, numCells, numBoxes * (5 + numClasses)]) as tf.Tensor4D,
     groundTruth,
     predictedBoxes,
     { width: numCells * 32, height: numCells * 32 },
-    createFakeConfig(config)
+    fakeConfig
   )
 }
 

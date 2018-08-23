@@ -3,6 +3,7 @@ import { Dimensions } from './types';
 
 export class ObjectDetection {
   private _score: number
+  private _classScore: number
   private _className: string
   private _box: Rect
   private _imageWidth: number
@@ -10,6 +11,7 @@ export class ObjectDetection {
 
   constructor(
     score: number,
+    classScore: number,
     className: string,
     relativeBox: Rect,
     imageDims: Dimensions
@@ -18,6 +20,7 @@ export class ObjectDetection {
     this._imageWidth = width
     this._imageHeight = height
     this._score = score
+    this._classScore = classScore
     this._className = className
     this._box = new Rect(
       relativeBox.x * width,
@@ -29,6 +32,10 @@ export class ObjectDetection {
 
   public get score(): number {
     return this._score
+  }
+
+  public get classScore(): number {
+    return this._classScore
   }
 
   public get className(): string {
@@ -79,6 +86,7 @@ export class ObjectDetection {
   public forSize(width: number, height: number): ObjectDetection {
     return new ObjectDetection(
       this.score,
+      this.classScore,
       this.className,
       this.getRelativeBox(),
       { width, height}

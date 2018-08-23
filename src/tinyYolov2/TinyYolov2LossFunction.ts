@@ -5,6 +5,7 @@ import { iou } from '../iou';
 import { Point } from '../Point';
 import { Rect } from '../Rect';
 import { Dimensions } from '../types';
+import { round } from '../utils';
 import { TinyYolov2TrainableConfig } from './config';
 import { CELL_SIZE } from './const';
 import { GridPosition, GroundTruth, GroundTruthWithGridPosition } from './types';
@@ -136,6 +137,8 @@ export class TinyYolov2LossFunction {
     )
   }
 
+
+  // TODO: apply sigmoid to outputTensor x, y
   public computeCoordLoss(): tf.Tensor4D {
     return tf.tidy(() =>
       this.computeLossTerm(
@@ -294,7 +297,7 @@ export class TinyYolov2LossFunction {
         predBox.box.rescale(this.reshapedImgDims)
       )
 
-      const anchorOffset = anchor * 5
+      const anchorOffset = this.boxEncodingSize * anchor
       const scoreValueOffset = 4
       buf.set(boxIou, row, col, anchorOffset + scoreValueOffset)
     })
@@ -302,7 +305,7 @@ export class TinyYolov2LossFunction {
     return ious
   }
 
-  private computeBoxAdjustments() {
+  public computeBoxAdjustments() {
 
     const adjustments = tf.zeros([this.numCells, this.numCells, this.gridCellEncodingSize])
     const buf = adjustments.buffer()
@@ -316,12 +319,15 @@ export class TinyYolov2LossFunction {
       const dCenterX = centerX - (col * CELL_SIZE)
       const dCenterY = centerY - (row * CELL_SIZE)
 
+      // inverseSigmoid(0) === -Infinity, inverseSigmoid(1) === Infinity
+      //const dx = inverseSigmoid(Math.min(0.999, Math.max(0.001, dCenterX / CELL_SIZE)))
+      //const dy = inverseSigmoid(Math.min(0.999, Math.max(0.001, dCenterY / CELL_SIZE)))
       const dx = dCenterX / CELL_SIZE
       const dy = dCenterY / CELL_SIZE
       const dw = Math.log((width / CELL_SIZE) / this.anchors[anchor].x)
       const dh = Math.log((height / CELL_SIZE) / this.anchors[anchor].y)
 
-      const anchorOffset = anchor * 5
+      const anchorOffset = this.boxEncodingSize * anchor
       buf.set(dx, row, col, anchorOffset + 0)
       buf.set(dy, row, col, anchorOffset + 1)
       buf.set(dw, row, col, anchorOffset + 2)

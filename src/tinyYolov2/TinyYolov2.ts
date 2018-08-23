@@ -110,6 +110,7 @@ export class TinyYolov2 extends NeuralNetwork<NetParams> {
 
     const boxes = results.map(res => res.box)
     const scores = results.map(res => res.score)
+    const classScores = results.map(res => res.classScore)
     const classNames = results.map(res => this.config.classes[res.classLabel])
 
     const indices = nonMaxSuppression(
@@ -122,6 +123,7 @@ export class TinyYolov2 extends NeuralNetwork<NetParams> {
     const detections = indices.map(idx =>
       new ObjectDetection(
         scores[idx],
+        classScores[idx],
         classNames[idx],
         boxes[idx].toRect(),
         inputDimensions
@@ -208,7 +210,8 @@ export class TinyYolov2 extends NeuralNetwork<NetParams> {
 
             results.push({
               box: new BoundingBox(x, y, x + width, y + height),
-              score: score * classScore,
+              score: score,
+              classScore: score * classScore,
               classLabel,
               ...pos
             })

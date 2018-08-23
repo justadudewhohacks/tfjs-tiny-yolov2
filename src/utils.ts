@@ -11,12 +11,17 @@ export function isEven(num: number) {
   return num % 2 === 0
 }
 
-export function round(num: number) {
-  return Math.floor(num * 100) / 100
+export function round(num: number, prec: number = 2) {
+  const f = Math.pow(10, prec)
+  return Math.floor(num * f) / f
 }
 
 export function sigmoid(x: number) {
   return 1 / (1 + Math.exp(-x))
+}
+
+export function inverseSigmoid(x: number) {
+  return Math.log(x / (1 - x))
 }
 
 export function isDimensions(obj: any): boolean {

@@ -28,7 +28,7 @@ function imageToSquare(img, inputSize) {
 
   const canvas1 = yolo.createCanvasFromMedia(img)
   const targetCanvas = yolo.createCanvas({ width: inputSize, height: inputSize })
-  targetCanvas.getContext('2d').putImageData(canvas1.getContext('2d').getImageData(0, 0, width, height), 0, 0)
+  targetCanvas.getContext('2d').drawImage(canvas1, 0, 0, width, height)
   return targetCanvas
 }
 

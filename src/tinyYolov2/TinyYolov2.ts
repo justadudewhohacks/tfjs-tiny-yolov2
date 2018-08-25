@@ -1,15 +1,18 @@
 import * as tf from '@tensorflow/tfjs-core';
+import {
+  BoundingBox,
+  Dimensions,
+  NetInput,
+  NeuralNetwork,
+  nonMaxSuppression,
+  normalize,
+  ObjectDetection,
+  sigmoid,
+  TNetInput,
+  toNetInput,
+} from 'tfjs-image-recognition-base';
 
-import { BoundingBox } from '../BoundingBox';
 import { convLayer } from '../commons/convLayer';
-import { NeuralNetwork } from '../commons/NeuralNetwork';
-import { nonMaxSuppression } from '../commons/nonMaxSuppression';
-import { normalize } from '../commons/normalize';
-import { NetInput } from '../NetInput';
-import { ObjectDetection } from '../ObjectDetection';
-import { toNetInput } from '../toNetInput';
-import { Dimensions, TNetInput } from '../types';
-import { sigmoid } from '../utils';
 import { TinyYolov2Config, validateConfig, validateTrainConfig } from './config';
 import { INPUT_SIZES } from './const';
 import { convWithBatchNorm } from './convWithBatchNorm';

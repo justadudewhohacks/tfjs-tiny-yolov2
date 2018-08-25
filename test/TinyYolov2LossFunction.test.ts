@@ -1,8 +1,7 @@
 import * as tf from '@tensorflow/tfjs-core';
 
-import { Rect } from '../src/Rect';
+import { inverseSigmoid, Rect } from '../src';
 import { GridPosition, GroundTruth } from '../src/tinyYolov2/types';
-import { inverseSigmoid } from '../src/utils';
 import { createFakeLossFunction, createFakeLossFunctionMd, expectTensorToBeZeros } from './utils';
 
 describe('TinyYolov2LossFunction', () => {

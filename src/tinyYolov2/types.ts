@@ -1,8 +1,7 @@
 import * as tf from '@tensorflow/tfjs-core';
+import { BoundingBox, IRect } from 'tfjs-image-recognition-base';
 
-import { BoundingBox } from '../BoundingBox';
 import { ConvParams } from '../commons/types';
-import { IRect } from '../Rect';
 
 export type BatchNorm = {
   sub: tf.Tensor1D

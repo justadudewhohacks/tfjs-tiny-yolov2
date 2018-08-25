@@ -1,11 +1,6 @@
 import * as tf from '@tensorflow/tfjs-core';
+import { BoundingBox, Dimensions, iou, Point, Rect } from 'tfjs-image-recognition-base';
 
-import { BoundingBox } from '../BoundingBox';
-import { iou } from '../iou';
-import { Point } from '../Point';
-import { Rect } from '../Rect';
-import { Dimensions } from '../types';
-import { round } from '../utils';
 import { TinyYolov2TrainableConfig } from './config';
 import { CELL_SIZE } from './const';
 import { GridPosition, GroundTruth, GroundTruthWithGridPosition } from './types';

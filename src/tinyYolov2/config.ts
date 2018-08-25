@@ -1,4 +1,4 @@
-import { Point } from '../Point';
+import { Point } from 'tfjs-image-recognition-base';
 
 export type TinyYolov2Config = {
   withSeparableConvs: boolean

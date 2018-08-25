@@ -108,7 +108,7 @@ export class TinyYolov2LossFunction {
         ? this.computeClassLoss()
         : tf.scalar(0)
 
-      const totalLoss = tf.tidy(() => noObjectLoss.add(objectLoss).add(coordLoss).add(classLoss))
+      const totalLoss: tf.Tensor<tf.Rank.R0> = tf.tidy(() => noObjectLoss.add(objectLoss).add(coordLoss).add(classLoss))
 
       return {
         noObjectLoss,
@@ -120,7 +120,7 @@ export class TinyYolov2LossFunction {
     })
   }
 
-  public computeNoObjectLoss(): tf.Tensor4D {
+  public computeNoObjectLoss(): tf.Tensor<tf.Rank.R0> {
     return tf.tidy(() =>
       this.computeLossTerm(
         this.config.noObjectScale,
@@ -130,7 +130,7 @@ export class TinyYolov2LossFunction {
     )
   }
 
-  public computeObjectLoss(): tf.Tensor4D {
+  public computeObjectLoss(): tf.Tensor<tf.Rank.R0> {
     return tf.tidy(() =>
       this.computeLossTerm(
         this.config.objectScale,
@@ -140,21 +140,30 @@ export class TinyYolov2LossFunction {
     )
   }
 
+  public computeClassLoss(): tf.Tensor<tf.Rank.R0> {
+    return tf.tidy(() => {
 
-  // TODO: apply sigmoid to outputTensor x, y
-  /*
-  public computeCoordLoss(): tf.Tensor4D {
-    return tf.tidy(() =>
-      this.computeLossTerm(
-        this.config.coordScale,
-        this.coordLossMask.reshape([1, this.numCells, this.numCells, this.gridCellEncodingSize]),
-        tf.sub(this.computeBoxAdjustments().reshape([1, this.numCells, this.numCells, this.gridCellEncodingSize]), this.outputTensor)
+      const classLossTensor = tf.tidy(() => {
+
+        const predClassScores = tf.mul(
+          tf.softmax(this.outputTensor.reshape([this.numCells, this.numCells, this.numBoxes, this.boxEncodingSize]), 3),
+          this.groundTruthClassScoresMask
+        )
+
+        const gtClassScores = this.createOneHotClassScoreMask()
+
+        return tf.sub(gtClassScores, predClassScores)
+      })
+
+      return this.computeLossTerm(
+        this.config.classScale,
+        tf.scalar(1),
+        classLossTensor as tf.Tensor4D
       )
-    )
+    })
   }
-  */
 
-  public computeCoordLoss(): tf.Tensor4D {
+  public computeCoordLoss(): tf.Tensor<tf.Rank.R0> {
     return tf.tidy(() =>
       this.computeLossTerm(
         this.config.coordScale,
@@ -188,30 +197,7 @@ export class TinyYolov2LossFunction {
     })
   }
 
-  public computeClassLoss(): tf.Tensor4D {
-    return tf.tidy(() => {
-
-      const classLossTensor = tf.tidy(() => {
-
-        const predClassScores = tf.mul(
-          tf.softmax(this.outputTensor.reshape([this.numCells, this.numCells, this.numBoxes, this.boxEncodingSize]), 3),
-          this.groundTruthClassScoresMask
-        )
-
-        const gtClassScores = this.createOneHotClassScoreMask()
-
-        return tf.sub(gtClassScores, predClassScores)
-      })
-
-      return this.computeLossTerm(
-        this.config.classScale,
-        tf.scalar(1),
-        classLossTensor as tf.Tensor4D
-      )
-    })
-  }
-
-  private computeLossTerm(scale: number, mask: tf.Tensor<tf.Rank>, lossTensor: tf.Tensor4D): tf.Tensor4D {
+  private computeLossTerm(scale: number, mask: tf.Tensor<tf.Rank>, lossTensor: tf.Tensor4D): tf.Tensor<tf.Rank.R0> {
     return tf.tidy(() => tf.mul(tf.scalar(scale), this.squaredSumOverMask(mask, lossTensor)))
   }
 

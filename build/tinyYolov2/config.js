@@ -28,4 +28,11 @@ function validateConfig(config) {
     }
 }
 exports.validateConfig = validateConfig;
+function validateTrainConfig(config) {
+    if (![config.noObjectScale, config.objectScale, config.coordScale, config.classScale].every(isNumber)) {
+        throw new Error("for training you have to specify noObjectScale, objectScale, coordScale, classScale parameters in your config.json file");
+    }
+    return config;
+}
+exports.validateTrainConfig = validateTrainConfig;
 //# sourceMappingURL=config.js.map

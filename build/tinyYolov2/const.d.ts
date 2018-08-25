@@ -4,3 +4,4 @@ export declare const INPUT_SIZES: {
     md: number;
     lg: number;
 };
+export declare const CELL_SIZE = 32;

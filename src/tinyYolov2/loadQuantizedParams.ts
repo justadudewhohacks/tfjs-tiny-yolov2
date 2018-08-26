@@ -6,7 +6,7 @@ import {
   ParamMapping,
 } from 'tfjs-image-recognition-base';
 
-import { ConvParams } from '../commons/types';
+import { ConvParams } from '../common';
 import { BatchNorm, ConvWithBatchNorm, NetParams, SeparableConvParams } from './types';
 
 function extractorsFactory(weightMap: any, paramMappings: ParamMapping[]) {

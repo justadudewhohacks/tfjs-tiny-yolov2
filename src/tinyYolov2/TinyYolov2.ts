@@ -12,7 +12,7 @@ import {
   toNetInput,
 } from 'tfjs-image-recognition-base';
 
-import { convLayer } from '../commons/convLayer';
+import { convLayer } from '../common';
 import { TinyYolov2Config, validateConfig } from './config';
 import { INPUT_SIZES } from './const';
 import { convWithBatchNorm } from './convWithBatchNorm';

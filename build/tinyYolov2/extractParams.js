@@ -2,10 +2,10 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 var tf = require("@tensorflow/tfjs-core");
 var tfjs_image_recognition_base_1 = require("tfjs-image-recognition-base");
-var extractConvParamsFactory_1 = require("../commons/extractConvParamsFactory");
+var common_1 = require("../common");
 var types_1 = require("./types");
 function extractorsFactory(extractWeights, paramMappings) {
-    var extractConvParams = extractConvParamsFactory_1.extractConvParamsFactory(extractWeights, paramMappings);
+    var extractConvParams = common_1.extractConvParamsFactory(extractWeights, paramMappings);
     function extractBatchNormParams(size, mappedPrefix) {
         var sub = tf.tensor1d(extractWeights(size));
         var truediv = tf.tensor1d(extractWeights(size));

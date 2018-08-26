@@ -3,7 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = require("tslib");
 var tf = require("@tensorflow/tfjs-core");
 var tfjs_image_recognition_base_1 = require("tfjs-image-recognition-base");
-var convLayer_1 = require("../commons/convLayer");
+var common_1 = require("../common");
 var config_1 = require("./config");
 var const_1 = require("./const");
 var convWithBatchNorm_1 = require("./convWithBatchNorm");
@@ -65,7 +65,7 @@ var TinyYolov2 = /** @class */ (function (_super) {
             out = tf.maxPool(out, [2, 2], [1, 1], 'same');
             out = convWithBatchNorm_1.convWithBatchNorm(out, params.conv6);
             out = convWithBatchNorm_1.convWithBatchNorm(out, params.conv7);
-            out = convLayer_1.convLayer(out, params.conv8, 'valid', false);
+            out = common_1.convLayer(out, params.conv8, 'valid', false);
             return out;
         });
         return out;

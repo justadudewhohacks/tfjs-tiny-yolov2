@@ -1367,6 +1367,27 @@
         });
     }
 
+    function extractConvParamsFactory(extractWeights, paramMappings) {
+        return function (channelsIn, channelsOut, filterSize, mappedPrefix) {
+            var filters = tensor4d(extractWeights(channelsIn * channelsOut * filterSize * filterSize), [filterSize, filterSize, channelsIn, channelsOut]);
+            var bias = tensor1d(extractWeights(channelsOut));
+            paramMappings.push({ paramPath: mappedPrefix + "/filters" }, { paramPath: mappedPrefix + "/bias" });
+            return { filters: filters, bias: bias };
+        };
+    }
+
+    function extractFCParamsFactory(extractWeights, paramMappings) {
+        return function (channelsIn, channelsOut, mappedPrefix) {
+            var fc_weights = tensor2d(extractWeights(channelsIn * channelsOut), [channelsIn, channelsOut]);
+            var fc_bias = tensor1d(extractWeights(channelsOut));
+            paramMappings.push({ paramPath: mappedPrefix + "/weights" }, { paramPath: mappedPrefix + "/bias" });
+            return {
+                weights: fc_weights,
+                bias: fc_bias
+            };
+        };
+    }
+
     var isNumber = function (arg) { return typeof arg === 'number'; };
     function validateConfig(config) {
         if (!config) {
@@ -1443,15 +1464,6 @@
             }
             return leaky(out);
         });
-    }
-
-    function extractConvParamsFactory(extractWeights, paramMappings) {
-        return function (channelsIn, channelsOut, filterSize, mappedPrefix) {
-            var filters = tensor4d(extractWeights(channelsIn * channelsOut * filterSize * filterSize), [filterSize, filterSize, channelsIn, channelsOut]);
-            var bias = tensor1d(extractWeights(channelsOut));
-            paramMappings.push({ paramPath: mappedPrefix + "/filters" }, { paramPath: mappedPrefix + "/bias" });
-            return { filters: filters, bias: bias };
-        };
     }
 
     function extractorsFactory(extractWeights, paramMappings) {
@@ -2215,6 +2227,9 @@
     exports.computeReshapedDimensions = computeReshapedDimensions;
     exports.getCenterPoint = getCenterPoint;
     exports.NeuralNetwork = NeuralNetwork;
+    exports.convLayer = convLayer;
+    exports.extractConvParamsFactory = extractConvParamsFactory;
+    exports.extractFCParamsFactory = extractFCParamsFactory;
     exports.TinyYolov2 = TinyYolov2;
     exports.TinyYolov2LossFunction = TinyYolov2LossFunction;
     exports.TinyYolov2Trainable = TinyYolov2Trainable;

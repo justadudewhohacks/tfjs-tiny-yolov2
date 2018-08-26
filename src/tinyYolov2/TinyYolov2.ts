@@ -1,23 +1,25 @@
 import * as tf from '@tensorflow/tfjs-core';
+import {
+  BoundingBox,
+  Dimensions,
+  NetInput,
+  NeuralNetwork,
+  nonMaxSuppression,
+  normalize,
+  ObjectDetection,
+  sigmoid,
+  TNetInput,
+  toNetInput,
+} from 'tfjs-image-recognition-base';
 
-import { BoundingBox } from '../BoundingBox';
 import { convLayer } from '../commons/convLayer';
-import { NeuralNetwork } from '../commons/NeuralNetwork';
-import { nonMaxSuppression } from '../commons/nonMaxSuppression';
-import { normalize } from '../commons/normalize';
-import { NetInput } from '../NetInput';
-import { ObjectDetection } from '../ObjectDetection';
-import { toNetInput } from '../toNetInput';
-import { Dimensions, TNetInput } from '../types';
-import { sigmoid } from '../utils';
-import { TinyYolov2Config, validateConfig, validateTrainConfig } from './config';
+import { TinyYolov2Config, validateConfig } from './config';
 import { INPUT_SIZES } from './const';
 import { convWithBatchNorm } from './convWithBatchNorm';
 import { extractParams } from './extractParams';
-import { getDefaultParams } from './getDefaultParams';
+import { getDefaultForwardParams } from './getDefaults';
 import { loadQuantizedParams } from './loadQuantizedParams';
-import { TinyYolov2LossFunction } from './TinyYolov2LossFunction';
-import { GroundTruth, NetParams, TinyYolov2ForwardParams } from './types';
+import { NetParams, TinyYolov2ForwardParams } from './types';
 
 export class TinyYolov2 extends NeuralNetwork<NetParams> {
 
@@ -85,7 +87,7 @@ export class TinyYolov2 extends NeuralNetwork<NetParams> {
 
   public async detect(input: TNetInput, forwardParams: TinyYolov2ForwardParams = {}): Promise<ObjectDetection[]> {
 
-    const { inputSize: _inputSize, scoreThreshold } = getDefaultParams(forwardParams)
+    const { inputSize: _inputSize, scoreThreshold } = getDefaultForwardParams(forwardParams)
 
     const inputSize = typeof _inputSize === 'string'
       ? INPUT_SIZES[_inputSize]
@@ -133,24 +135,6 @@ export class TinyYolov2 extends NeuralNetwork<NetParams> {
     return detections
   }
 
-  public computeLoss(outputTensor: tf.Tensor4D, groundTruth: GroundTruth[], reshapedImgDims: Dimensions) {
-
-    const config = validateTrainConfig(this.config)
-
-    const inputSize = Math.max(reshapedImgDims.width, reshapedImgDims.height)
-
-    if (!inputSize) {
-      throw new Error(`computeLoss - invalid inputSize: ${inputSize}`)
-    }
-
-    const predictedBoxes = this.extractBoxes(outputTensor, reshapedImgDims)
-
-    return tf.tidy(() => {
-      const lossFunction = new TinyYolov2LossFunction(outputTensor, groundTruth, predictedBoxes, reshapedImgDims, config)
-      return lossFunction.computeLoss()
-    })
-  }
-
   protected loadQuantizedParams(modelUri: string | undefined) {
     if (!modelUri) {
       throw new Error('loadQuantizedParams - please specify the modelUri')
@@ -163,7 +147,7 @@ export class TinyYolov2 extends NeuralNetwork<NetParams> {
     return extractParams(weights, this.config.withSeparableConvs, this.boxEncodingSize)
   }
 
-  private extractBoxes(
+  protected extractBoxes(
     outputTensor: tf.Tensor4D,
     inputBlobDimensions: Dimensions,
     scoreThreshold?: number

@@ -1,8 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var tf = require("@tensorflow/tfjs-core");
+var tfjs_image_recognition_base_1 = require("tfjs-image-recognition-base");
 var extractConvParamsFactory_1 = require("../commons/extractConvParamsFactory");
-var extractWeightsFactory_1 = require("../commons/extractWeightsFactory");
 var types_1 = require("./types");
 function extractorsFactory(extractWeights, paramMappings) {
     var extractConvParams = extractConvParamsFactory_1.extractConvParamsFactory(extractWeights, paramMappings);
@@ -31,7 +31,7 @@ function extractorsFactory(extractWeights, paramMappings) {
     };
 }
 function extractParams(weights, withSeparableConvs, boxEncodingSize) {
-    var _a = extractWeightsFactory_1.extractWeightsFactory(weights), extractWeights = _a.extractWeights, getRemainingWeights = _a.getRemainingWeights;
+    var _a = tfjs_image_recognition_base_1.extractWeightsFactory(weights), extractWeights = _a.extractWeights, getRemainingWeights = _a.getRemainingWeights;
     var paramMappings = [];
     var _b = extractorsFactory(extractWeights, paramMappings), extractConvParams = _b.extractConvParams, extractConvWithBatchNormParams = _b.extractConvWithBatchNormParams, extractSeparableConvParams = _b.extractSeparableConvParams;
     var extractConvFn = withSeparableConvs ? extractSeparableConvParams : extractConvWithBatchNormParams;

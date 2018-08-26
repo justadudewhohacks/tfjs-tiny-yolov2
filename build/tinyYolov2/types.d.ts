@@ -1,6 +1,6 @@
 import * as tf from '@tensorflow/tfjs-core';
+import { BoundingBox, IRect } from 'tfjs-image-recognition-base';
 import { ConvParams } from '../commons/types';
-import { Point } from '../Point';
 export declare type BatchNorm = {
     sub: tf.Tensor1D;
     truediv: tf.Tensor1D;
@@ -32,11 +32,30 @@ export declare enum SizeType {
     MD = "md",
     LG = "lg"
 }
+export declare type GridPosition = {
+    row: number;
+    col: number;
+    anchor: number;
+};
+export declare type GroundTruthWithGridPosition = GridPosition & {
+    box: BoundingBox;
+    classLabel: number;
+};
+export declare type GroundTruth = IRect & {
+    classLabel: number;
+};
 export declare type TinyYolov2ForwardParams = {
     inputSize?: SizeType | number;
     scoreThreshold?: number;
 };
-export declare type PostProcessingParams = {
-    scoreThreshold?: number;
-    paddings: Point;
+export declare type YoloLoss = {
+    totalLoss: number;
+    noObjectLoss: number;
+    objectLoss: number;
+    coordLoss: number;
+    classLoss: number;
+};
+export declare type TinyYolov2BackwardOptions = {
+    minBoxSize?: number;
+    reportLosses?: (losses: YoloLoss, numBoxes: number) => void;
 };

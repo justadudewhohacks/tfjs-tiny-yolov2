@@ -1,5 +1,4 @@
 const dataFiles = [
-  // empty
 ].map(pattern => ({
   pattern,
   watched: false,
@@ -19,7 +18,12 @@ module.exports = function(config) {
       '**/*.ts': ['karma-typescript']
     },
     karmaTypescriptConfig: {
-      tsconfig: 'tsconfig.test.json'
+      tsconfig: 'tsconfig.test.json',
+      bundlerOptions: {
+        transforms: [
+          require("karma-typescript-es6-transform")()
+        ]
+      }
     },
     browsers: ['Chrome'],
     browserNoActivityTimeout: 60000,

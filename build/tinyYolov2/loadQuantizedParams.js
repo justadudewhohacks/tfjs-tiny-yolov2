@@ -1,12 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = require("tslib");
-var disposeUnusedWeightTensors_1 = require("../commons/disposeUnusedWeightTensors");
-var extractWeightEntryFactory_1 = require("../commons/extractWeightEntryFactory");
-var loadWeightMap_1 = require("../commons/loadWeightMap");
+var tfjs_image_recognition_base_1 = require("tfjs-image-recognition-base");
 var types_1 = require("./types");
 function extractorsFactory(weightMap, paramMappings) {
-    var extractWeightEntry = extractWeightEntryFactory_1.extractWeightEntryFactory(weightMap, paramMappings);
+    var extractWeightEntry = tfjs_image_recognition_base_1.extractWeightEntryFactory(weightMap, paramMappings);
     function extractBatchNormParams(prefix) {
         var sub = extractWeightEntry(prefix + "/sub", 1);
         var truediv = extractWeightEntry(prefix + "/truediv", 1);
@@ -39,7 +37,7 @@ function loadQuantizedParams(uri, withSeparableConvs) {
         var weightMap, paramMappings, _a, extractConvParams, extractConvWithBatchNormParams, extractSeparableConvParams, extractConvFn, params;
         return tslib_1.__generator(this, function (_b) {
             switch (_b.label) {
-                case 0: return [4 /*yield*/, loadWeightMap_1.loadWeightMap(uri, '')];
+                case 0: return [4 /*yield*/, tfjs_image_recognition_base_1.loadWeightMap(uri, '')];
                 case 1:
                     weightMap = _b.sent();
                     paramMappings = [];
@@ -56,7 +54,7 @@ function loadQuantizedParams(uri, withSeparableConvs) {
                         conv7: extractConvFn('conv7'),
                         conv8: extractConvParams('conv8')
                     };
-                    disposeUnusedWeightTensors_1.disposeUnusedWeightTensors(weightMap, paramMappings);
+                    tfjs_image_recognition_base_1.disposeUnusedWeightTensors(weightMap, paramMappings);
                     return [2 /*return*/, { params: params, paramMappings: paramMappings }];
             }
         });

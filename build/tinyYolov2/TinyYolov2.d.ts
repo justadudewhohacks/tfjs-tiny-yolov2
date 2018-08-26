@@ -1,9 +1,5 @@
 import * as tf from '@tensorflow/tfjs-core';
-import { BoundingBox } from '../BoundingBox';
-import { NeuralNetwork } from '../commons/NeuralNetwork';
-import { NetInput } from '../NetInput';
-import { ObjectDetection } from '../ObjectDetection';
-import { Dimensions, TNetInput } from '../types';
+import { BoundingBox, Dimensions, NetInput, NeuralNetwork, ObjectDetection, TNetInput } from 'tfjs-image-recognition-base';
 import { TinyYolov2Config } from './config';
 import { NetParams, TinyYolov2ForwardParams } from './types';
 export declare class TinyYolov2 extends NeuralNetwork<NetParams> {
@@ -15,25 +11,22 @@ export declare class TinyYolov2 extends NeuralNetwork<NetParams> {
     forwardInput(input: NetInput, inputSize: number): tf.Tensor4D;
     forward(input: TNetInput, inputSize: number): Promise<tf.Tensor4D>;
     detect(input: TNetInput, forwardParams?: TinyYolov2ForwardParams): Promise<ObjectDetection[]>;
-    extractBoxes(outputTensor: tf.Tensor4D, scoreThreshold: number, inputBlobDimensions: Dimensions): {
+    protected loadQuantizedParams(modelUri: string | undefined): Promise<{
+        params: NetParams;
+        paramMappings: import("../../../../../../Users/user/dev/tfjs-tiny-yolo-v2/node_modules/tfjs-image-recognition-base/build/common/types").ParamMapping[];
+    }>;
+    protected extractParams(weights: Float32Array): {
+        params: NetParams;
+        paramMappings: import("../../../../../../Users/user/dev/tfjs-tiny-yolo-v2/node_modules/tfjs-image-recognition-base/build/common/types").ParamMapping[];
+    };
+    protected extractBoxes(outputTensor: tf.Tensor4D, inputBlobDimensions: Dimensions, scoreThreshold?: number): {
         row: number;
         col: number;
         anchor: number;
         box: BoundingBox;
         score: number;
-        className: string;
+        classScore: number;
+        classLabel: number;
     }[];
-    extractClassScores(classesTensor: tf.Tensor4D, score: number, pos: {
-        row: number;
-        col: number;
-        anchor: number;
-    }): number[];
-    protected loadQuantizedParams(modelUri: string | undefined): Promise<{
-        params: NetParams;
-        paramMappings: import("src/commons/types").ParamMapping[];
-    }>;
-    protected extractParams(weights: Float32Array): {
-        params: NetParams;
-        paramMappings: import("src/commons/types").ParamMapping[];
-    };
+    private extractPredictedClass;
 }

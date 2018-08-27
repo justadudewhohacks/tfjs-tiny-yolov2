@@ -30,7 +30,7 @@ export declare enum SizeType {
     XS = "xs",
     SM = "sm",
     MD = "md",
-    LG = "lg"
+    LG = "lg",
 }
 export declare type GridPosition = {
     row: number;

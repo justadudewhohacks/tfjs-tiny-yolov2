@@ -30,8 +30,8 @@ var TinyYolov2Trainable = /** @class */ (function (_super) {
     TinyYolov2Trainable.prototype.backward = function (img, groundTruth, inputSize, options) {
         if (options === void 0) { options = {}; }
         return tslib_1.__awaiter(this, void 0, void 0, function () {
-            var _a, minBoxSize, reportLosses, reshapedImgDims, filteredGroundTruthBoxes, netInput, loss;
             var _this = this;
+            var _a, minBoxSize, reportLosses, reshapedImgDims, filteredGroundTruthBoxes, netInput, loss;
             return tslib_1.__generator(this, function (_b) {
                 switch (_b.label) {
                     case 0:

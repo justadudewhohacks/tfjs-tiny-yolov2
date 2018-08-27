@@ -40,14 +40,14 @@ export declare class TinyYolov2LossFunction {
     computeCoordLoss(): tf.Tensor<tf.Rank.R0>;
     computeCoordBoxOffsetError(): tf.Tensor4D;
     computeCoordBoxSizeError(): tf.Tensor4D;
-    private computeLossTerm;
-    private squaredSumOverMask;
-    private validateGroundTruthBoxes;
-    private assignGroundTruthToAnchors;
-    private createGroundTruthMask;
-    private createCoordAndScoreMasks;
-    private createOneHotClassScoreMask;
-    private computeIous;
+    private computeLossTerm(scale, mask, lossTensor);
+    private squaredSumOverMask(mask, lossTensor);
+    private validateGroundTruthBoxes(groundTruth);
+    private assignGroundTruthToAnchors(groundTruth);
+    private createGroundTruthMask();
+    private createCoordAndScoreMasks();
+    private createOneHotClassScoreMask();
+    private computeIous();
     computeCoordBoxOffsets(): tf.Tensor<tf.Rank>;
     computeCoordBoxSizes(): tf.Tensor<tf.Rank>;
 }

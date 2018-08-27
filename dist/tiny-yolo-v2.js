@@ -1661,8 +1661,8 @@
         TinyYolov2.prototype.detect = function (input, forwardParams) {
             if (forwardParams === void 0) { forwardParams = {}; }
             return __awaiter$1(this, void 0, void 0, function () {
-                var _a, _inputSize, scoreThreshold, inputSize, netInput, out, out0, inputDimensions, results, boxes, scores, classScores, classNames, indices, detections;
                 var _this = this;
+                var _a, _inputSize, scoreThreshold, inputSize, netInput, out, out0, inputDimensions, results, boxes, scores, classScores, classNames, indices, detections;
                 return __generator$1(this, function (_b) {
                     switch (_b.label) {
                         case 0:
@@ -2110,8 +2110,8 @@
         TinyYolov2Trainable.prototype.backward = function (img, groundTruth, inputSize, options) {
             if (options === void 0) { options = {}; }
             return __awaiter$1(this, void 0, void 0, function () {
-                var _a, minBoxSize, reportLosses, reshapedImgDims, filteredGroundTruthBoxes, netInput, loss;
                 var _this = this;
+                var _a, minBoxSize, reportLosses, reshapedImgDims, filteredGroundTruthBoxes, netInput, loss;
                 return __generator$1(this, function (_b) {
                     switch (_b.label) {
                         case 0:

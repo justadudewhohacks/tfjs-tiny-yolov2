@@ -13,11 +13,17 @@ export declare class TinyYolov2 extends NeuralNetwork<NetParams> {
     detect(input: TNetInput, forwardParams?: TinyYolov2ForwardParams): Promise<ObjectDetection[]>;
     protected loadQuantizedParams(modelUri: string | undefined, defaultModelName?: string): Promise<{
         params: NetParams;
-        paramMappings: import("../../../../../../Users/user/dev/tfjs-tiny-yolo-v2/node_modules/tfjs-image-recognition-base/build/common/types").ParamMapping[];
+        paramMappings: {
+            originalPath?: string | undefined;
+            paramPath: string;
+        }[];
     }>;
     protected extractParams(weights: Float32Array): {
         params: NetParams;
-        paramMappings: import("../../../../../../Users/user/dev/tfjs-tiny-yolo-v2/node_modules/tfjs-image-recognition-base/build/common/types").ParamMapping[];
+        paramMappings: {
+            originalPath?: string | undefined;
+            paramPath: string;
+        }[];
     };
     protected extractBoxes(outputTensor: tf.Tensor4D, inputBlobDimensions: Dimensions, scoreThreshold?: number): {
         row: number;
@@ -28,5 +34,5 @@ export declare class TinyYolov2 extends NeuralNetwork<NetParams> {
         classScore: number;
         classLabel: number;
     }[];
-    private extractPredictedClass;
+    private extractPredictedClass(classesTensor, pos);
 }

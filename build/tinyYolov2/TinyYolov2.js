@@ -85,8 +85,8 @@ var TinyYolov2 = /** @class */ (function (_super) {
     TinyYolov2.prototype.detect = function (input, forwardParams) {
         if (forwardParams === void 0) { forwardParams = {}; }
         return tslib_1.__awaiter(this, void 0, void 0, function () {
-            var _a, _inputSize, scoreThreshold, inputSize, netInput, out, out0, inputDimensions, results, boxes, scores, classScores, classNames, indices, detections;
             var _this = this;
+            var _a, _inputSize, scoreThreshold, inputSize, netInput, out, out0, inputDimensions, results, boxes, scores, classScores, classNames, indices, detections;
             return tslib_1.__generator(this, function (_b) {
                 switch (_b.label) {
                     case 0:

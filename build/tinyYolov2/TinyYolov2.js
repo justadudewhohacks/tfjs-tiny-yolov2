@@ -174,6 +174,7 @@ var TinyYolov2 = /** @class */ (function (_super) {
         }
         boxesTensor.dispose();
         scoresTensor.dispose();
+        classScoresTensor.dispose();
         return results;
     };
     TinyYolov2.prototype.extractPredictedClass = function (classesTensor, pos) {

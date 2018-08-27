@@ -206,6 +206,7 @@ export class TinyYolov2 extends NeuralNetwork<NetParams> {
 
     boxesTensor.dispose()
     scoresTensor.dispose()
+    classScoresTensor.dispose()
 
     return results
   }

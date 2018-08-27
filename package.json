@@ -1,6 +1,6 @@
 {
   "name": "tfjs-tiny-yolov2",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "Tiny YOLO v2 object detection with tensorflow.js.",
   "main": "./build/index.js",
   "typings": "./build/index.d.ts",

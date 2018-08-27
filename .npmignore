@@ -3,9 +3,7 @@ node_modules
 
 examples
 proto
-weights
-weights_uncompressed
-weights_unused
+models
 train
 test
 tools

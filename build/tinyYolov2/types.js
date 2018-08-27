@@ -1,5 +1,3 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
 var SeparableConvParams = /** @class */ (function () {
     function SeparableConvParams(depthwise_filter, pointwise_filter, bias) {
         this.depthwise_filter = depthwise_filter;
@@ -8,12 +6,12 @@ var SeparableConvParams = /** @class */ (function () {
     }
     return SeparableConvParams;
 }());
-exports.SeparableConvParams = SeparableConvParams;
-var SizeType;
+export { SeparableConvParams };
+export var SizeType;
 (function (SizeType) {
     SizeType["XS"] = "xs";
     SizeType["SM"] = "sm";
     SizeType["MD"] = "md";
     SizeType["LG"] = "lg";
-})(SizeType = exports.SizeType || (exports.SizeType = {}));
+})(SizeType || (SizeType = {}));
 //# sourceMappingURL=types.js.map

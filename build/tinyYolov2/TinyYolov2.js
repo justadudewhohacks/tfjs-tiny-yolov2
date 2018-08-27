@@ -1,20 +1,18 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-var tslib_1 = require("tslib");
-var tf = require("@tensorflow/tfjs-core");
-var tfjs_image_recognition_base_1 = require("tfjs-image-recognition-base");
-var common_1 = require("../common");
-var config_1 = require("./config");
-var const_1 = require("./const");
-var convWithBatchNorm_1 = require("./convWithBatchNorm");
-var extractParams_1 = require("./extractParams");
-var getDefaults_1 = require("./getDefaults");
-var loadQuantizedParams_1 = require("./loadQuantizedParams");
+import * as tslib_1 from "tslib";
+import * as tf from '@tensorflow/tfjs-core';
+import { BoundingBox, NeuralNetwork, nonMaxSuppression, normalize, ObjectDetection, sigmoid, toNetInput, } from 'tfjs-image-recognition-base';
+import { convLayer } from '../common';
+import { validateConfig } from './config';
+import { INPUT_SIZES } from './const';
+import { convWithBatchNorm } from './convWithBatchNorm';
+import { extractParams } from './extractParams';
+import { getDefaultForwardParams } from './getDefaults';
+import { loadQuantizedParams } from './loadQuantizedParams';
 var TinyYolov2 = /** @class */ (function (_super) {
     tslib_1.__extends(TinyYolov2, _super);
     function TinyYolov2(config) {
         var _this = _super.call(this, 'TinyYolov2') || this;
-        config_1.validateConfig(config);
+        validateConfig(config);
         _this._config = config;
         return _this;
     }
@@ -48,24 +46,24 @@ var TinyYolov2 = /** @class */ (function (_super) {
         var out = tf.tidy(function () {
             var batchTensor = input.toBatchTensor(inputSize, false);
             batchTensor = _this.config.meanRgb
-                ? tfjs_image_recognition_base_1.normalize(batchTensor, _this.config.meanRgb)
+                ? normalize(batchTensor, _this.config.meanRgb)
                 : batchTensor;
             batchTensor = batchTensor.div(tf.scalar(256));
-            var out = convWithBatchNorm_1.convWithBatchNorm(batchTensor, params.conv0);
+            var out = convWithBatchNorm(batchTensor, params.conv0);
             out = tf.maxPool(out, [2, 2], [2, 2], 'same');
-            out = convWithBatchNorm_1.convWithBatchNorm(out, params.conv1);
+            out = convWithBatchNorm(out, params.conv1);
             out = tf.maxPool(out, [2, 2], [2, 2], 'same');
-            out = convWithBatchNorm_1.convWithBatchNorm(out, params.conv2);
+            out = convWithBatchNorm(out, params.conv2);
             out = tf.maxPool(out, [2, 2], [2, 2], 'same');
-            out = convWithBatchNorm_1.convWithBatchNorm(out, params.conv3);
+            out = convWithBatchNorm(out, params.conv3);
             out = tf.maxPool(out, [2, 2], [2, 2], 'same');
-            out = convWithBatchNorm_1.convWithBatchNorm(out, params.conv4);
+            out = convWithBatchNorm(out, params.conv4);
             out = tf.maxPool(out, [2, 2], [2, 2], 'same');
-            out = convWithBatchNorm_1.convWithBatchNorm(out, params.conv5);
+            out = convWithBatchNorm(out, params.conv5);
             out = tf.maxPool(out, [2, 2], [1, 1], 'same');
-            out = convWithBatchNorm_1.convWithBatchNorm(out, params.conv6);
-            out = convWithBatchNorm_1.convWithBatchNorm(out, params.conv7);
-            out = common_1.convLayer(out, params.conv8, 'valid', false);
+            out = convWithBatchNorm(out, params.conv6);
+            out = convWithBatchNorm(out, params.conv7);
+            out = convLayer(out, params.conv8, 'valid', false);
             return out;
         });
         return out;
@@ -77,7 +75,7 @@ var TinyYolov2 = /** @class */ (function (_super) {
                 switch (_b.label) {
                     case 0:
                         _a = this.forwardInput;
-                        return [4 /*yield*/, tfjs_image_recognition_base_1.toNetInput(input, true, true)];
+                        return [4 /*yield*/, toNetInput(input, true, true)];
                     case 1: return [4 /*yield*/, _a.apply(this, [_b.sent(), inputSize])];
                     case 2: return [2 /*return*/, _b.sent()];
                 }
@@ -92,14 +90,14 @@ var TinyYolov2 = /** @class */ (function (_super) {
             return tslib_1.__generator(this, function (_b) {
                 switch (_b.label) {
                     case 0:
-                        _a = getDefaults_1.getDefaultForwardParams(forwardParams), _inputSize = _a.inputSize, scoreThreshold = _a.scoreThreshold;
+                        _a = getDefaultForwardParams(forwardParams), _inputSize = _a.inputSize, scoreThreshold = _a.scoreThreshold;
                         inputSize = typeof _inputSize === 'string'
-                            ? const_1.INPUT_SIZES[_inputSize]
+                            ? INPUT_SIZES[_inputSize]
                             : _inputSize;
                         if (typeof inputSize !== 'number') {
                             throw new Error("TinyYolov2 - unknown inputSize: " + inputSize + ", expected number or one of xs | sm | md | lg");
                         }
-                        return [4 /*yield*/, tfjs_image_recognition_base_1.toNetInput(input, true)];
+                        return [4 /*yield*/, toNetInput(input, true)];
                     case 1:
                         netInput = _b.sent();
                         return [4 /*yield*/, this.forwardInput(netInput, inputSize)];
@@ -117,23 +115,24 @@ var TinyYolov2 = /** @class */ (function (_super) {
                         scores = results.map(function (res) { return res.score; });
                         classScores = results.map(function (res) { return res.classScore; });
                         classNames = results.map(function (res) { return _this.config.classes[res.classLabel]; });
-                        indices = tfjs_image_recognition_base_1.nonMaxSuppression(boxes.map(function (box) { return box.rescale(inputSize); }), scores, this.config.iouThreshold, true);
+                        indices = nonMaxSuppression(boxes.map(function (box) { return box.rescale(inputSize); }), scores, this.config.iouThreshold, true);
                         detections = indices.map(function (idx) {
-                            return new tfjs_image_recognition_base_1.ObjectDetection(scores[idx], classScores[idx], classNames[idx], boxes[idx].toRect(), inputDimensions);
+                            return new ObjectDetection(scores[idx], classScores[idx], classNames[idx], boxes[idx].toRect(), inputDimensions);
                         });
                         return [2 /*return*/, detections];
                 }
             });
         });
     };
-    TinyYolov2.prototype.loadQuantizedParams = function (modelUri) {
+    TinyYolov2.prototype.loadQuantizedParams = function (modelUri, defaultModelName) {
+        if (defaultModelName === void 0) { defaultModelName = ''; }
         if (!modelUri) {
             throw new Error('loadQuantizedParams - please specify the modelUri');
         }
-        return loadQuantizedParams_1.loadQuantizedParams(modelUri, this.config.withSeparableConvs);
+        return loadQuantizedParams(modelUri, this.config.withSeparableConvs, defaultModelName);
     };
     TinyYolov2.prototype.extractParams = function (weights) {
-        return extractParams_1.extractParams(weights, this.config.withSeparableConvs, this.boxEncodingSize);
+        return extractParams(weights, this.config.withSeparableConvs, this.boxEncodingSize);
     };
     TinyYolov2.prototype.extractBoxes = function (outputTensor, inputBlobDimensions, scoreThreshold) {
         var _this = this;
@@ -156,10 +155,10 @@ var TinyYolov2 = /** @class */ (function (_super) {
         for (var row = 0; row < numCells; row++) {
             for (var col = 0; col < numCells; col++) {
                 for (var anchor = 0; anchor < numBoxes; anchor++) {
-                    var score = tfjs_image_recognition_base_1.sigmoid(scoresTensor.get(row, col, anchor, 0));
+                    var score = sigmoid(scoresTensor.get(row, col, anchor, 0));
                     if (!scoreThreshold || score > scoreThreshold) {
-                        var ctX = ((col + tfjs_image_recognition_base_1.sigmoid(boxesTensor.get(row, col, anchor, 0))) / numCells) * correctionFactorX;
-                        var ctY = ((row + tfjs_image_recognition_base_1.sigmoid(boxesTensor.get(row, col, anchor, 1))) / numCells) * correctionFactorY;
+                        var ctX = ((col + sigmoid(boxesTensor.get(row, col, anchor, 0))) / numCells) * correctionFactorX;
+                        var ctY = ((row + sigmoid(boxesTensor.get(row, col, anchor, 1))) / numCells) * correctionFactorY;
                         var width_1 = ((Math.exp(boxesTensor.get(row, col, anchor, 2)) * this.config.anchors[anchor].x) / numCells) * correctionFactorX;
                         var height_1 = ((Math.exp(boxesTensor.get(row, col, anchor, 3)) * this.config.anchors[anchor].y) / numCells) * correctionFactorY;
                         var x = (ctX - (width_1 / 2));
@@ -168,7 +167,7 @@ var TinyYolov2 = /** @class */ (function (_super) {
                         var _b = this.withClassScores
                             ? this.extractPredictedClass(classScoresTensor, pos)
                             : { classScore: 1, classLabel: 0 }, classScore = _b.classScore, classLabel = _b.classLabel;
-                        results.push(tslib_1.__assign({ box: new tfjs_image_recognition_base_1.BoundingBox(x, y, x + width_1, y + height_1), score: score, classScore: score * classScore, classLabel: classLabel }, pos));
+                        results.push(tslib_1.__assign({ box: new BoundingBox(x, y, x + width_1, y + height_1), score: score, classScore: score * classScore, classLabel: classLabel }, pos));
                     }
                 }
             }
@@ -188,6 +187,6 @@ var TinyYolov2 = /** @class */ (function (_super) {
             .reduce(function (max, curr) { return max.classScore > curr.classScore ? max : curr; });
     };
     return TinyYolov2;
-}(tfjs_image_recognition_base_1.NeuralNetwork));
-exports.TinyYolov2 = TinyYolov2;
+}(NeuralNetwork));
+export { TinyYolov2 };
 //# sourceMappingURL=TinyYolov2.js.map

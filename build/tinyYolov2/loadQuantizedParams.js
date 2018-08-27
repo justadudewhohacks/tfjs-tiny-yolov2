@@ -1,10 +1,8 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-var tslib_1 = require("tslib");
-var tfjs_image_recognition_base_1 = require("tfjs-image-recognition-base");
-var types_1 = require("./types");
+import * as tslib_1 from "tslib";
+import { disposeUnusedWeightTensors, extractWeightEntryFactory, loadWeightMap, } from 'tfjs-image-recognition-base';
+import { SeparableConvParams } from './types';
 function extractorsFactory(weightMap, paramMappings) {
-    var extractWeightEntry = tfjs_image_recognition_base_1.extractWeightEntryFactory(weightMap, paramMappings);
+    var extractWeightEntry = extractWeightEntryFactory(weightMap, paramMappings);
     function extractBatchNormParams(prefix) {
         var sub = extractWeightEntry(prefix + "/sub", 1);
         var truediv = extractWeightEntry(prefix + "/truediv", 1);
@@ -24,7 +22,7 @@ function extractorsFactory(weightMap, paramMappings) {
         var depthwise_filter = extractWeightEntry(prefix + "/depthwise_filter", 4);
         var pointwise_filter = extractWeightEntry(prefix + "/pointwise_filter", 4);
         var bias = extractWeightEntry(prefix + "/bias", 1);
-        return new types_1.SeparableConvParams(depthwise_filter, pointwise_filter, bias);
+        return new SeparableConvParams(depthwise_filter, pointwise_filter, bias);
     }
     return {
         extractConvParams: extractConvParams,
@@ -32,12 +30,13 @@ function extractorsFactory(weightMap, paramMappings) {
         extractSeparableConvParams: extractSeparableConvParams
     };
 }
-function loadQuantizedParams(uri, withSeparableConvs) {
+export function loadQuantizedParams(uri, withSeparableConvs, defaultModelName) {
+    if (defaultModelName === void 0) { defaultModelName = ''; }
     return tslib_1.__awaiter(this, void 0, void 0, function () {
         var weightMap, paramMappings, _a, extractConvParams, extractConvWithBatchNormParams, extractSeparableConvParams, extractConvFn, params;
         return tslib_1.__generator(this, function (_b) {
             switch (_b.label) {
-                case 0: return [4 /*yield*/, tfjs_image_recognition_base_1.loadWeightMap(uri, '')];
+                case 0: return [4 /*yield*/, loadWeightMap(uri, defaultModelName)];
                 case 1:
                     weightMap = _b.sent();
                     paramMappings = [];
@@ -54,11 +53,10 @@ function loadQuantizedParams(uri, withSeparableConvs) {
                         conv7: extractConvFn('conv7'),
                         conv8: extractConvParams('conv8')
                     };
-                    tfjs_image_recognition_base_1.disposeUnusedWeightTensors(weightMap, paramMappings);
+                    disposeUnusedWeightTensors(weightMap, paramMappings);
                     return [2 /*return*/, { params: params, paramMappings: paramMappings }];
             }
         });
     });
 }
-exports.loadQuantizedParams = loadQuantizedParams;
 //# sourceMappingURL=loadQuantizedParams.js.map

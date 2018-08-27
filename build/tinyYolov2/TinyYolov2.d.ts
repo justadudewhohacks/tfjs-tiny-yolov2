@@ -11,7 +11,7 @@ export declare class TinyYolov2 extends NeuralNetwork<NetParams> {
     forwardInput(input: NetInput, inputSize: number): tf.Tensor4D;
     forward(input: TNetInput, inputSize: number): Promise<tf.Tensor4D>;
     detect(input: TNetInput, forwardParams?: TinyYolov2ForwardParams): Promise<ObjectDetection[]>;
-    protected loadQuantizedParams(modelUri: string | undefined): Promise<{
+    protected loadQuantizedParams(modelUri: string | undefined, defaultModelName?: string): Promise<{
         params: NetParams;
         paramMappings: import("../../../../../../Users/user/dev/tfjs-tiny-yolo-v2/node_modules/tfjs-image-recognition-base/build/common/types").ParamMapping[];
     }>;

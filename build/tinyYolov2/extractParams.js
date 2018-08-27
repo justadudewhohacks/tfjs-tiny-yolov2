@@ -1,11 +1,9 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-var tf = require("@tensorflow/tfjs-core");
-var tfjs_image_recognition_base_1 = require("tfjs-image-recognition-base");
-var common_1 = require("../common");
-var types_1 = require("./types");
+import * as tf from '@tensorflow/tfjs-core';
+import { extractWeightsFactory } from 'tfjs-image-recognition-base';
+import { extractConvParamsFactory } from '../common';
+import { SeparableConvParams } from './types';
 function extractorsFactory(extractWeights, paramMappings) {
-    var extractConvParams = common_1.extractConvParamsFactory(extractWeights, paramMappings);
+    var extractConvParams = extractConvParamsFactory(extractWeights, paramMappings);
     function extractBatchNormParams(size, mappedPrefix) {
         var sub = tf.tensor1d(extractWeights(size));
         var truediv = tf.tensor1d(extractWeights(size));
@@ -22,7 +20,7 @@ function extractorsFactory(extractWeights, paramMappings) {
         var pointwise_filter = tf.tensor4d(extractWeights(channelsIn * channelsOut), [1, 1, channelsIn, channelsOut]);
         var bias = tf.tensor1d(extractWeights(channelsOut));
         paramMappings.push({ paramPath: mappedPrefix + "/depthwise_filter" }, { paramPath: mappedPrefix + "/pointwise_filter" }, { paramPath: mappedPrefix + "/bias" });
-        return new types_1.SeparableConvParams(depthwise_filter, pointwise_filter, bias);
+        return new SeparableConvParams(depthwise_filter, pointwise_filter, bias);
     }
     return {
         extractConvParams: extractConvParams,
@@ -30,8 +28,8 @@ function extractorsFactory(extractWeights, paramMappings) {
         extractSeparableConvParams: extractSeparableConvParams
     };
 }
-function extractParams(weights, withSeparableConvs, boxEncodingSize) {
-    var _a = tfjs_image_recognition_base_1.extractWeightsFactory(weights), extractWeights = _a.extractWeights, getRemainingWeights = _a.getRemainingWeights;
+export function extractParams(weights, withSeparableConvs, boxEncodingSize) {
+    var _a = extractWeightsFactory(weights), extractWeights = _a.extractWeights, getRemainingWeights = _a.getRemainingWeights;
     var paramMappings = [];
     var _b = extractorsFactory(extractWeights, paramMappings), extractConvParams = _b.extractConvParams, extractConvWithBatchNormParams = _b.extractConvWithBatchNormParams, extractSeparableConvParams = _b.extractSeparableConvParams;
     var extractConvFn = withSeparableConvs ? extractSeparableConvParams : extractConvWithBatchNormParams;
@@ -50,5 +48,4 @@ function extractParams(weights, withSeparableConvs, boxEncodingSize) {
     var params = { conv0: conv0, conv1: conv1, conv2: conv2, conv3: conv3, conv4: conv4, conv5: conv5, conv6: conv6, conv7: conv7, conv8: conv8 };
     return { params: params, paramMappings: paramMappings };
 }
-exports.extractParams = extractParams;
 //# sourceMappingURL=extractParams.js.map

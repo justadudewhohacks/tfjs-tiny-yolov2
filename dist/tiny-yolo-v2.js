@@ -1388,6 +1388,22 @@
         };
     }
 
+    var SeparableConvParams = /** @class */ (function () {
+        function SeparableConvParams(depthwise_filter, pointwise_filter, bias) {
+            this.depthwise_filter = depthwise_filter;
+            this.pointwise_filter = pointwise_filter;
+            this.bias = bias;
+        }
+        return SeparableConvParams;
+    }());
+    var SizeType;
+    (function (SizeType) {
+        SizeType["XS"] = "xs";
+        SizeType["SM"] = "sm";
+        SizeType["MD"] = "md";
+        SizeType["LG"] = "lg";
+    })(SizeType || (SizeType = {}));
+
     var isNumber = function (arg) { return typeof arg === 'number'; };
     function validateConfig(config) {
         if (!config) {
@@ -1432,22 +1448,6 @@
             //return tf.maximum(x, min)
         });
     }
-
-    var SeparableConvParams = /** @class */ (function () {
-        function SeparableConvParams(depthwise_filter, pointwise_filter, bias) {
-            this.depthwise_filter = depthwise_filter;
-            this.pointwise_filter = pointwise_filter;
-            this.bias = bias;
-        }
-        return SeparableConvParams;
-    }());
-    var SizeType;
-    (function (SizeType) {
-        SizeType["XS"] = "xs";
-        SizeType["SM"] = "sm";
-        SizeType["MD"] = "md";
-        SizeType["LG"] = "lg";
-    })(SizeType || (SizeType = {}));
 
     function convWithBatchNorm(x, params) {
         return tidy(function () {
@@ -1554,12 +1554,13 @@
             extractSeparableConvParams: extractSeparableConvParams
         };
     }
-    function loadQuantizedParams(uri, withSeparableConvs) {
+    function loadQuantizedParams(uri, withSeparableConvs, defaultModelName) {
+        if (defaultModelName === void 0) { defaultModelName = ''; }
         return __awaiter$1(this, void 0, void 0, function () {
             var weightMap, paramMappings, _a, extractConvParams, extractConvWithBatchNormParams, extractSeparableConvParams, extractConvFn, params;
             return __generator$1(this, function (_b) {
                 switch (_b.label) {
-                    case 0: return [4 /*yield*/, loadWeightMap(uri, '')];
+                    case 0: return [4 /*yield*/, loadWeightMap(uri, defaultModelName)];
                     case 1:
                         weightMap = _b.sent();
                         paramMappings = [];
@@ -1699,11 +1700,12 @@
                 });
             });
         };
-        TinyYolov2.prototype.loadQuantizedParams = function (modelUri) {
+        TinyYolov2.prototype.loadQuantizedParams = function (modelUri, defaultModelName) {
+            if (defaultModelName === void 0) { defaultModelName = ''; }
             if (!modelUri) {
                 throw new Error('loadQuantizedParams - please specify the modelUri');
             }
-            return loadQuantizedParams(modelUri, this.config.withSeparableConvs);
+            return loadQuantizedParams(modelUri, this.config.withSeparableConvs, defaultModelName);
         };
         TinyYolov2.prototype.extractParams = function (weights) {
             return extractParams(weights, this.config.withSeparableConvs, this.boxEncodingSize);
@@ -2180,6 +2182,10 @@
         };
         return TinyYolov2Trainable;
     }(TinyYolov2));
+
+    (function (TinyYolov2Types) {
+        TinyYolov2Types.SizeType = SizeType;
+    })(exports.TinyYolov2Types || (exports.TinyYolov2Types = {}));
 
     exports.tf = tfCore_esm;
     exports.BoundingBox = BoundingBox;

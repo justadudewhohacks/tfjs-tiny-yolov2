@@ -1,17 +1,15 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-var tslib_1 = require("tslib");
-var tf = require("@tensorflow/tfjs-core");
-var tfjs_image_recognition_base_1 = require("tfjs-image-recognition-base");
-var config_1 = require("./config");
-var getDefaults_1 = require("./getDefaults");
-var TinyYolov2_1 = require("./TinyYolov2");
-var TinyYolov2LossFunction_1 = require("./TinyYolov2LossFunction");
+import * as tslib_1 from "tslib";
+import * as tf from '@tensorflow/tfjs-core';
+import { computeReshapedDimensions, getMediaDimensions, imageToSquare, Rect, toNetInput, } from 'tfjs-image-recognition-base';
+import { validateTrainConfig } from './config';
+import { getDefaultBackwardOptions } from './getDefaults';
+import { TinyYolov2 } from './TinyYolov2';
+import { TinyYolov2LossFunction } from './TinyYolov2LossFunction';
 var TinyYolov2Trainable = /** @class */ (function (_super) {
     tslib_1.__extends(TinyYolov2Trainable, _super);
     function TinyYolov2Trainable(trainableConfig, optimizer) {
         var _this = _super.call(this, trainableConfig) || this;
-        _this._trainableConfig = config_1.validateTrainConfig(trainableConfig);
+        _this._trainableConfig = validateTrainConfig(trainableConfig);
         _this._optimizer = optimizer;
         return _this;
     }
@@ -37,13 +35,13 @@ var TinyYolov2Trainable = /** @class */ (function (_super) {
             return tslib_1.__generator(this, function (_b) {
                 switch (_b.label) {
                     case 0:
-                        _a = getDefaults_1.getDefaultBackwardOptions(options), minBoxSize = _a.minBoxSize, reportLosses = _a.reportLosses;
-                        reshapedImgDims = tfjs_image_recognition_base_1.computeReshapedDimensions(tfjs_image_recognition_base_1.getMediaDimensions(img), inputSize);
+                        _a = getDefaultBackwardOptions(options), minBoxSize = _a.minBoxSize, reportLosses = _a.reportLosses;
+                        reshapedImgDims = computeReshapedDimensions(getMediaDimensions(img), inputSize);
                         filteredGroundTruthBoxes = this.filterGroundTruthBoxes(groundTruth, reshapedImgDims, minBoxSize);
                         if (!filteredGroundTruthBoxes.length) {
                             return [2 /*return*/, null];
                         }
-                        return [4 /*yield*/, tfjs_image_recognition_base_1.toNetInput(tfjs_image_recognition_base_1.imageToSquare(img, inputSize))];
+                        return [4 /*yield*/, toNetInput(imageToSquare(img, inputSize))];
                     case 1:
                         netInput = _b.sent();
                         loss = this.optimizer.minimize(function () {
@@ -67,14 +65,14 @@ var TinyYolov2Trainable = /** @class */ (function (_super) {
         });
     };
     TinyYolov2Trainable.prototype.computeLoss = function (outputTensor, groundTruth, reshapedImgDims) {
-        var config = config_1.validateTrainConfig(this.config);
+        var config = validateTrainConfig(this.config);
         var inputSize = Math.max(reshapedImgDims.width, reshapedImgDims.height);
         if (!inputSize) {
             throw new Error("computeLoss - invalid inputSize: " + inputSize);
         }
         var predictedBoxes = this.extractBoxes(outputTensor, reshapedImgDims);
         return tf.tidy(function () {
-            var lossFunction = new TinyYolov2LossFunction_1.TinyYolov2LossFunction(outputTensor, groundTruth, predictedBoxes, reshapedImgDims, config);
+            var lossFunction = new TinyYolov2LossFunction(outputTensor, groundTruth, predictedBoxes, reshapedImgDims, config);
             return lossFunction.computeLoss();
         });
     };
@@ -82,7 +80,7 @@ var TinyYolov2Trainable = /** @class */ (function (_super) {
         var imgHeight = imgDims.height, imgWidth = imgDims.width;
         return groundTruth.filter(function (_a) {
             var x = _a.x, y = _a.y, width = _a.width, height = _a.height;
-            var box = (new tfjs_image_recognition_base_1.Rect(x, y, width, height))
+            var box = (new Rect(x, y, width, height))
                 .toBoundingBox()
                 .rescale({ height: imgHeight, width: imgWidth });
             var isTooTiny = box.width < minBoxSize || box.height < minBoxSize;
@@ -103,6 +101,6 @@ var TinyYolov2Trainable = /** @class */ (function (_super) {
         });
     };
     return TinyYolov2Trainable;
-}(TinyYolov2_1.TinyYolov2));
-exports.TinyYolov2Trainable = TinyYolov2Trainable;
+}(TinyYolov2));
+export { TinyYolov2Trainable };
 //# sourceMappingURL=TinyYolov2Trainable.js.map

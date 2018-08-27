@@ -1,9 +1,6 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-var tslib_1 = require("tslib");
-var tf = require("@tensorflow/tfjs-core");
-exports.tf = tf;
-tslib_1.__exportStar(require("tfjs-image-recognition-base"), exports);
-tslib_1.__exportStar(require("./common"), exports);
-tslib_1.__exportStar(require("./tinyYolov2"), exports);
+import * as tf from '@tensorflow/tfjs-core';
+export { tf };
+export * from 'tfjs-image-recognition-base';
+export * from './common';
+export * from './tinyYolov2';
 //# sourceMappingURL=index.js.map

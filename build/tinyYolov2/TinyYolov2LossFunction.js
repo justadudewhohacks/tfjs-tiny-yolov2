@@ -1,8 +1,6 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-var tf = require("@tensorflow/tfjs-core");
-var tfjs_image_recognition_base_1 = require("tfjs-image-recognition-base");
-var const_1 = require("./const");
+import * as tf from '@tensorflow/tfjs-core';
+import { BoundingBox, iou, Rect } from 'tfjs-image-recognition-base';
+import { CELL_SIZE } from './const';
 var TinyYolov2LossFunction = /** @class */ (function () {
     function TinyYolov2LossFunction(outputTensor, groundTruth, predictedBoxes, reshapedImgDims, config) {
         this._config = config;
@@ -92,7 +90,7 @@ var TinyYolov2LossFunction = /** @class */ (function () {
     });
     Object.defineProperty(TinyYolov2LossFunction.prototype, "numCells", {
         get: function () {
-            return this.inputSize / const_1.CELL_SIZE;
+            return this.inputSize / CELL_SIZE;
         },
         enumerable: true,
         configurable: true
@@ -199,7 +197,7 @@ var TinyYolov2LossFunction = /** @class */ (function () {
             .map(function (_a) {
             var x = _a.x, y = _a.y, width = _a.width, height = _a.height, classLabel = _a.classLabel;
             return ({
-                box: (new tfjs_image_recognition_base_1.Rect(x, y, width, height)).toBoundingBox(),
+                box: (new Rect(x, y, width, height)).toBoundingBox(),
                 classLabel: classLabel
             });
         });
@@ -212,7 +210,7 @@ var TinyYolov2LossFunction = /** @class */ (function () {
             var row = Math.floor((ctY / _this.inputSize) * _this.numCells);
             var anchorsByIou = _this.anchors.map(function (anchor, idx) { return ({
                 idx: idx,
-                iou: tfjs_image_recognition_base_1.iou(new tfjs_image_recognition_base_1.BoundingBox(0, 0, anchor.x * const_1.CELL_SIZE, anchor.y * const_1.CELL_SIZE), new tfjs_image_recognition_base_1.BoundingBox(0, 0, width, height))
+                iou: iou(new BoundingBox(0, 0, anchor.x * CELL_SIZE, anchor.y * CELL_SIZE), new BoundingBox(0, 0, width, height))
             }); }).sort(function (a1, a2) { return a2.iou - a1.iou; });
             var anchor = anchorsByIou[0].idx;
             return { row: row, col: col, anchor: anchor, box: box, classLabel: classLabel };
@@ -278,7 +276,7 @@ var TinyYolov2LossFunction = /** @class */ (function () {
             if (!predBox) {
                 throw new Error("no output box found for: row " + row + ", col " + col + ", anchor " + anchor);
             }
-            var boxIou = tfjs_image_recognition_base_1.iou(box.rescale(_this.reshapedImgDims), predBox.box.rescale(_this.reshapedImgDims));
+            var boxIou = iou(box.rescale(_this.reshapedImgDims), predBox.box.rescale(_this.reshapedImgDims));
             var anchorOffset = _this.boxEncodingSize * anchor;
             var scoreValueOffset = 4;
             buf.set(boxIou, row, col, anchorOffset + scoreValueOffset);
@@ -294,13 +292,13 @@ var TinyYolov2LossFunction = /** @class */ (function () {
             var _b = box.rescale(_this.reshapedImgDims), left = _b.left, top = _b.top, right = _b.right, bottom = _b.bottom;
             var centerX = (left + right) / 2;
             var centerY = (top + bottom) / 2;
-            var dCenterX = centerX - (col * const_1.CELL_SIZE);
-            var dCenterY = centerY - (row * const_1.CELL_SIZE);
+            var dCenterX = centerX - (col * CELL_SIZE);
+            var dCenterY = centerY - (row * CELL_SIZE);
             // inverseSigmoid(0) === -Infinity, inverseSigmoid(1) === Infinity
             //const dx = inverseSigmoid(Math.min(0.999, Math.max(0.001, dCenterX / CELL_SIZE)))
             //const dy = inverseSigmoid(Math.min(0.999, Math.max(0.001, dCenterY / CELL_SIZE)))
-            var dx = dCenterX / const_1.CELL_SIZE;
-            var dy = dCenterY / const_1.CELL_SIZE;
+            var dx = dCenterX / CELL_SIZE;
+            var dy = dCenterY / CELL_SIZE;
             buf.set(dx, row, col, anchor, 0);
             buf.set(dy, row, col, anchor, 1);
         });
@@ -313,8 +311,8 @@ var TinyYolov2LossFunction = /** @class */ (function () {
         this.groundTruth.forEach(function (_a) {
             var row = _a.row, col = _a.col, anchor = _a.anchor, box = _a.box;
             var _b = box.rescale(_this.reshapedImgDims), width = _b.width, height = _b.height;
-            var dw = Math.log(width / (_this.anchors[anchor].x * const_1.CELL_SIZE));
-            var dh = Math.log(height / (_this.anchors[anchor].y * const_1.CELL_SIZE));
+            var dw = Math.log(width / (_this.anchors[anchor].x * CELL_SIZE));
+            var dh = Math.log(height / (_this.anchors[anchor].y * CELL_SIZE));
             buf.set(dw, row, col, anchor, 2);
             buf.set(dh, row, col, anchor, 3);
         });
@@ -322,5 +320,5 @@ var TinyYolov2LossFunction = /** @class */ (function () {
     };
     return TinyYolov2LossFunction;
 }());
-exports.TinyYolov2LossFunction = TinyYolov2LossFunction;
+export { TinyYolov2LossFunction };
 //# sourceMappingURL=TinyYolov2LossFunction.js.map

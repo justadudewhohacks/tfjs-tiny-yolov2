@@ -1,7 +1,5 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
 var isNumber = function (arg) { return typeof arg === 'number'; };
-function validateConfig(config) {
+export function validateConfig(config) {
     if (!config) {
         throw new Error("invalid config: " + config);
     }
@@ -27,12 +25,10 @@ function validateConfig(config) {
         throw new Error("config.meanRgb has to be an array of shape [number, number, number], have: " + JSON.stringify(config.meanRgb));
     }
 }
-exports.validateConfig = validateConfig;
-function validateTrainConfig(config) {
+export function validateTrainConfig(config) {
     if (![config.noObjectScale, config.objectScale, config.coordScale, config.classScale].every(isNumber)) {
         throw new Error("for training you have to specify noObjectScale, objectScale, coordScale, classScale parameters in your config.json file");
     }
     return config;
 }
-exports.validateTrainConfig = validateTrainConfig;
 //# sourceMappingURL=config.js.map

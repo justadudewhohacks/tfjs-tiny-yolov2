@@ -53,10 +53,11 @@ function extractorsFactory(weightMap: any, paramMappings: ParamMapping[]) {
 
 export async function loadQuantizedParams(
   uri: string,
-  withSeparableConvs: boolean
+  withSeparableConvs: boolean,
+  defaultModelName: string = ''
 ): Promise<{ params: NetParams, paramMappings: ParamMapping[] }> {
 
-  const weightMap = await loadWeightMap(uri, '')
+  const weightMap = await loadWeightMap(uri, defaultModelName)
   const paramMappings: ParamMapping[] = []
 
   const {

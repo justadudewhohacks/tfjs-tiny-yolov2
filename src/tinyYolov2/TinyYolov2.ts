@@ -135,12 +135,12 @@ export class TinyYolov2 extends NeuralNetwork<NetParams> {
     return detections
   }
 
-  protected loadQuantizedParams(modelUri: string | undefined) {
+  protected loadQuantizedParams(modelUri: string | undefined, defaultModelName: string = '') {
     if (!modelUri) {
       throw new Error('loadQuantizedParams - please specify the modelUri')
     }
 
-    return loadQuantizedParams(modelUri, this.config.withSeparableConvs)
+    return loadQuantizedParams(modelUri, this.config.withSeparableConvs, defaultModelName)
   }
 
   protected extractParams(weights: Float32Array) {

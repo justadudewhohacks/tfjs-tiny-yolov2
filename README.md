@@ -20,7 +20,7 @@ Table of Contents:
 
 ## Pre Trained Models
 
-The VOC and COCO models correspond to the quantized weights from the official darknet repo. The face detector uses depthwise separable convolutions instead of regular convolutions allowing for much faster prediction and a tiny model size, which is well suited for object deteciton on mobile devices as well. I trained the face detection model from scratch. Have a look at the **[Training your own Object Detector](#training-your-own-object-detector)** section if you want to train such a model for your own dataset!
+The VOC and COCO models correspond to the quantized weights from the official [darknet](https://github.com/pjreddie/darknet) repo. The face detector uses depthwise separable convolutions instead of regular convolutions allowing for much faster prediction and a tiny model size, which is well suited for object deteciton on mobile devices as well. I trained the face detection model from scratch. Have a look at the **[Training your own Object Detector](#training-your-own-object-detector)** section if you want to train such a model for your own dataset!
 
 ### Pascal VOC
 
@@ -70,7 +70,7 @@ await net.load(`voc_model-weights_manifest.json`)
 
 The config file of the VOC model looks as follows:
 
-``` json
+``` js
 {
   // the pre trained VOC model uses regular convolutions
   "withSeparableConvs": false,
@@ -120,7 +120,7 @@ Training a multiclass detector will take quite some time, depending on how much 
 
 ### Defining your Model Config
 
-``` json
+``` js
 {
   // use separable convolutions over regular convolutions
   "withSeparableConvs": true,

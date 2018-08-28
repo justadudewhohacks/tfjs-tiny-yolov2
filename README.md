@@ -24,9 +24,19 @@ The VOC and COCO models correspond to the quantized weights from the official da
 
 ### Pascal VOC
 
+![voc1](https://user-images.githubusercontent.com/31125521/44733258-7ca2a000-aae7-11e8-93f3-07be9943e222.jpg)
+![voc2](https://user-images.githubusercontent.com/31125521/44733259-7d3b3680-aae7-11e8-9794-ab00edef9a48.jpg)
+
 ### COCO
 
+![coco1](https://user-images.githubusercontent.com/31125521/44733254-7ca2a000-aae7-11e8-9113-28eaea552093.jpg)
+![coco2](https://user-images.githubusercontent.com/31125521/44733256-7ca2a000-aae7-11e8-98f6-26853a12248a.jpg)
+
 ### Face Detection
+
+The face detection model is one of the models available in [face-api.js](https://github.com/justadudewhohacks/face-api.js).
+
+![face](https://user-images.githubusercontent.com/31125521/44733257-7ca2a000-aae7-11e8-9ede-1a38f20e36be.jpg)
 
 <a name="running-the-examples"></a>
 

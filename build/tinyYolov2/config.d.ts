@@ -6,6 +6,7 @@ export declare type TinyYolov2Config = {
     classes: string[];
     meanRgb?: [number, number, number];
     withClassScores?: boolean;
+    filterSizes?: number[];
 };
 export declare type TinyYolov2TrainableConfig = TinyYolov2Config & {
     noObjectScale: number;

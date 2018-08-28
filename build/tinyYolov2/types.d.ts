@@ -55,7 +55,12 @@ export declare type YoloLoss = {
     coordLoss: number;
     classLoss: number;
 };
+export declare type LossReport = {
+    losses: YoloLoss;
+    numBoxes: number;
+    inputSize: number;
+};
 export declare type TinyYolov2BackwardOptions = {
     minBoxSize?: number;
-    reportLosses?: (losses: YoloLoss, numBoxes: number) => void;
+    reportLosses?: (report: LossReport) => void;
 };

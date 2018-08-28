@@ -3,7 +3,7 @@ import * as tf from '@tensorflow/tfjs-core';
 import { BoundingBox, NeuralNetwork, nonMaxSuppression, normalize, ObjectDetection, sigmoid, toNetInput, } from 'tfjs-image-recognition-base';
 import { convLayer } from '../common';
 import { validateConfig } from './config';
-import { INPUT_SIZES } from './const';
+import { DEFAULT_FILTER_SIZES, INPUT_SIZES } from './const';
 import { convWithBatchNorm } from './convWithBatchNorm';
 import { extractParams } from './extractParams';
 import { getDefaultForwardParams } from './getDefaults';
@@ -132,7 +132,12 @@ var TinyYolov2 = /** @class */ (function (_super) {
         return loadQuantizedParams(modelUri, this.config.withSeparableConvs, defaultModelName);
     };
     TinyYolov2.prototype.extractParams = function (weights) {
-        return extractParams(weights, this.config.withSeparableConvs, this.boxEncodingSize);
+        var filterSizes = this.config.filterSizes || DEFAULT_FILTER_SIZES;
+        var numFilters = filterSizes ? filterSizes.length : undefined;
+        if (numFilters !== 9) {
+            throw new Error("TinyYolov2 - expected 9 convolutional filters, but found " + numFilters + " filterSizes in config");
+        }
+        return extractParams(weights, this.config.withSeparableConvs, this.boxEncodingSize, filterSizes);
     };
     TinyYolov2.prototype.extractBoxes = function (outputTensor, inputBlobDimensions, scoreThreshold) {
         var _this = this;

@@ -54,7 +54,12 @@ var TinyYolov2Trainable = /** @class */ (function (_super) {
                                     coordLoss: coordLoss.dataSync()[0],
                                     classLoss: classLoss.dataSync()[0]
                                 };
-                                reportLosses(losses, filteredGroundTruthBoxes.length);
+                                var report = {
+                                    losses: losses,
+                                    numBoxes: filteredGroundTruthBoxes.length,
+                                    inputSize: inputSize
+                                };
+                                reportLosses(report);
                             }
                             return totalLoss;
                         }, true);

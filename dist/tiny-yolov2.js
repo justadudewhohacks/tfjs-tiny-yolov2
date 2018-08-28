@@ -1440,6 +1440,9 @@
 
     var INPUT_SIZES = { xs: 224, sm: 320, md: 416, lg: 608 };
     var CELL_SIZE = 32;
+    var DEFAULT_FILTER_SIZES = [
+        3, 16, 32, 64, 128, 256, 512, 1024, 1024
+    ];
 
     function leaky(x) {
         return tidy(function () {
@@ -1492,20 +1495,21 @@
             extractSeparableConvParams: extractSeparableConvParams
         };
     }
-    function extractParams(weights, withSeparableConvs, boxEncodingSize) {
+    function extractParams(weights, withSeparableConvs, boxEncodingSize, filterSizes) {
         var _a = extractWeightsFactory(weights), extractWeights = _a.extractWeights, getRemainingWeights = _a.getRemainingWeights;
         var paramMappings = [];
         var _b = extractorsFactory(extractWeights, paramMappings), extractConvParams = _b.extractConvParams, extractConvWithBatchNormParams = _b.extractConvWithBatchNormParams, extractSeparableConvParams = _b.extractSeparableConvParams;
         var extractConvFn = withSeparableConvs ? extractSeparableConvParams : extractConvWithBatchNormParams;
-        var conv0 = extractConvFn(3, 16, 'conv0');
-        var conv1 = extractConvFn(16, 32, 'conv1');
-        var conv2 = extractConvFn(32, 64, 'conv2');
-        var conv3 = extractConvFn(64, 128, 'conv3');
-        var conv4 = extractConvFn(128, 256, 'conv4');
-        var conv5 = extractConvFn(256, 512, 'conv5');
-        var conv6 = extractConvFn(512, 1024, 'conv6');
-        var conv7 = extractConvFn(1024, 1024, 'conv7');
-        var conv8 = extractConvParams(1024, 5 * boxEncodingSize, 1, 'conv8');
+        var s0 = filterSizes[0], s1 = filterSizes[1], s2 = filterSizes[2], s3 = filterSizes[3], s4 = filterSizes[4], s5 = filterSizes[5], s6 = filterSizes[6], s7 = filterSizes[7], s8 = filterSizes[8];
+        var conv0 = extractConvFn(s0, s1, 'conv0');
+        var conv1 = extractConvFn(s1, s2, 'conv1');
+        var conv2 = extractConvFn(s2, s3, 'conv2');
+        var conv3 = extractConvFn(s3, s4, 'conv3');
+        var conv4 = extractConvFn(s4, s5, 'conv4');
+        var conv5 = extractConvFn(s5, s6, 'conv5');
+        var conv6 = extractConvFn(s6, s7, 'conv6');
+        var conv7 = extractConvFn(s7, s8, 'conv7');
+        var conv8 = extractConvParams(s8, 5 * boxEncodingSize, 1, 'conv8');
         if (getRemainingWeights().length !== 0) {
             throw new Error("weights remaing after extract: " + getRemainingWeights().length);
         }
@@ -1708,7 +1712,12 @@
             return loadQuantizedParams(modelUri, this.config.withSeparableConvs, defaultModelName);
         };
         TinyYolov2.prototype.extractParams = function (weights) {
-            return extractParams(weights, this.config.withSeparableConvs, this.boxEncodingSize);
+            var filterSizes = this.config.filterSizes || DEFAULT_FILTER_SIZES;
+            var numFilters = filterSizes ? filterSizes.length : undefined;
+            if (numFilters !== 9) {
+                throw new Error("TinyYolov2 - expected 9 convolutional filters, but found " + numFilters + " filterSizes in config");
+            }
+            return extractParams(weights, this.config.withSeparableConvs, this.boxEncodingSize, filterSizes);
         };
         TinyYolov2.prototype.extractBoxes = function (outputTensor, inputBlobDimensions, scoreThreshold) {
             var _this = this;
@@ -2135,7 +2144,12 @@
                                         coordLoss: coordLoss.dataSync()[0],
                                         classLoss: classLoss.dataSync()[0]
                                     };
-                                    reportLosses(losses, filteredGroundTruthBoxes.length);
+                                    var report = {
+                                        losses: losses,
+                                        numBoxes: filteredGroundTruthBoxes.length,
+                                        inputSize: inputSize
+                                    };
+                                    reportLosses(report);
                                 }
                                 return totalLoss;
                             }, true);
@@ -2244,4 +2258,4 @@
     Object.defineProperty(exports, '__esModule', { value: true });
 
 })));
-//# sourceMappingURL=tiny-yolo-v2.js.map
+//# sourceMappingURL=tiny-yolov2.js.map

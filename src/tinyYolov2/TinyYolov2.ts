@@ -14,7 +14,7 @@ import {
 
 import { convLayer } from '../common';
 import { TinyYolov2Config, validateConfig } from './config';
-import { INPUT_SIZES } from './const';
+import { DEFAULT_FILTER_SIZES, INPUT_SIZES } from './const';
 import { convWithBatchNorm } from './convWithBatchNorm';
 import { extractParams } from './extractParams';
 import { getDefaultForwardParams } from './getDefaults';
@@ -39,7 +39,7 @@ export class TinyYolov2 extends NeuralNetwork<NetParams> {
     return this.config.withClassScores || this.config.classes.length > 1
   }
 
-  public get boxEncodingSize(): number{
+  public get boxEncodingSize(): number {
     return 5 + (this.withClassScores ? this.config.classes.length : 0)
   }
 
@@ -144,7 +144,13 @@ export class TinyYolov2 extends NeuralNetwork<NetParams> {
   }
 
   protected extractParams(weights: Float32Array) {
-    return extractParams(weights, this.config.withSeparableConvs, this.boxEncodingSize)
+    const filterSizes = this.config.filterSizes || DEFAULT_FILTER_SIZES
+
+    const numFilters = filterSizes ? filterSizes.length : undefined
+    if (numFilters !== 9) {
+      throw new Error(`TinyYolov2 - expected 9 convolutional filters, but found ${numFilters} filterSizes in config`)
+    }
+    return extractParams(weights, this.config.withSeparableConvs, this.boxEncodingSize, filterSizes)
   }
 
   protected extractBoxes(

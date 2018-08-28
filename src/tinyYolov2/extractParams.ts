@@ -55,7 +55,12 @@ function extractorsFactory(extractWeights: ExtractWeightsFunction, paramMappings
 
 }
 
-export function extractParams(weights: Float32Array, withSeparableConvs: boolean, boxEncodingSize: number): { params: NetParams, paramMappings: ParamMapping[] } {
+export function extractParams(
+  weights: Float32Array,
+  withSeparableConvs: boolean,
+  boxEncodingSize: number,
+  filterSizes: number[]
+): { params: NetParams, paramMappings: ParamMapping[] } {
 
   const {
     extractWeights,
@@ -72,15 +77,16 @@ export function extractParams(weights: Float32Array, withSeparableConvs: boolean
 
   const extractConvFn = withSeparableConvs ? extractSeparableConvParams : extractConvWithBatchNormParams
 
-  const conv0 = extractConvFn(3, 16, 'conv0',)
-  const conv1 = extractConvFn(16, 32, 'conv1')
-  const conv2 = extractConvFn(32, 64, 'conv2')
-  const conv3 = extractConvFn(64, 128, 'conv3')
-  const conv4 = extractConvFn(128, 256, 'conv4')
-  const conv5 = extractConvFn(256, 512, 'conv5')
-  const conv6 = extractConvFn(512, 1024, 'conv6')
-  const conv7 = extractConvFn(1024, 1024, 'conv7')
-  const conv8 = extractConvParams(1024, 5 * boxEncodingSize, 1, 'conv8')
+  const [s0, s1, s2, s3, s4, s5, s6, s7, s8] = filterSizes
+  const conv0 = extractConvFn(s0, s1, 'conv0',)
+  const conv1 = extractConvFn(s1, s2, 'conv1')
+  const conv2 = extractConvFn(s2, s3, 'conv2')
+  const conv3 = extractConvFn(s3, s4, 'conv3')
+  const conv4 = extractConvFn(s4, s5, 'conv4')
+  const conv5 = extractConvFn(s5, s6, 'conv5')
+  const conv6 = extractConvFn(s6, s7, 'conv6')
+  const conv7 = extractConvFn(s7, s8, 'conv7')
+  const conv8 = extractConvParams(s8, 5 * boxEncodingSize, 1, 'conv8')
 
   if (getRemainingWeights().length !== 0) {
     throw new Error(`weights remaing after extract: ${getRemainingWeights().length}`)

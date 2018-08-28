@@ -16,10 +16,10 @@
     tf = yolo.tf
 
     // uri to weights file of last checkpoint
-    const modelCheckpoint = '/tmp/voc_e28_14800.weights'
+    const modelCheckpoint = '/tmp/voc_e30_2800.weights'
 
     // continue training at epoch
-    const startEpoch = 29
+    const startEpoch = 30
 
     // optimizer used for loss minimization (I found adam with default parameters to work out)
     const learningRate = 0.0001 // 0.001
@@ -78,8 +78,8 @@
       for (let epoch = startEpoch; epoch < window.maxEpoch; epoch++) {
 
         if (epoch !== startEpoch) {
-          saveWeights(window.net, `voc_epoch${epoch}.weights`)
-          saveAs(new Blob([JSON.stringify(lossReporter.summary())]), `voc_losses_epoch${epoch}.json`)
+          saveWeights(window.net, `voc_epoch${epoch - 1}.weights`)
+          saveAs(new Blob([JSON.stringify(lossReporter.summary())]), `voc_losses_epoch${epoch - 1}.json`)
         }
         lossReporter.resetLosses()
 

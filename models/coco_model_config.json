@@ -1,0 +1,29 @@
+{
+  "withSeparableConvs": false,
+  "iouThreshold": 0.4,
+  "anchors": [
+    { "x": 0.57, "y": 0.68 },
+    { "x": 1.87, "y": 2.06 },
+    { "x": 3.34, "y": 5.47 },
+    { "x": 7.88, "y": 3.53 },
+    { "x": 9.77, "y": 9.17 }
+  ],
+  "classes": [
+    "person", "bicycle", "car", "motorbike", "aeroplane",
+    "bus", "train", "truck", "boat", "traffic light",
+    "fire hydrant", "stop sign", "parking meter", "bench", "bird",
+    "cat", "dog", "horse", "sheep", "cow",
+    "elephant", "bear", "zebra", "giraffe", "backpack",
+    "umbrella" ,"handbag", "tie", "suitcase", "frisbee",
+    "skis", "snowboard", "sports ball", "kite", "baseball bat",
+    "baseball glove", "skateboard", "surfboard", "tennis racket", "bottle",
+    "wine glass", "cup", "fork", "knife", "spoon",
+    "bowl", "banana", "apple", "sandwich", "orange",
+    "broccoli", "carrot", "hot dog", "pizza", "donut",
+    "cake", "chair", "sofa", "pottedplant", "bed",
+    "diningtable", "toilet", "tvmonitor", "laptop", "mouse",
+    "remote", "keyboard", "cell phone", "microwave", "oven",
+    "toaster", "sink", "refrigerator", "book", "clock",
+    "vase", "scissors", "teddy bear", "hair drier", "toothbrush"
+  ]
+}

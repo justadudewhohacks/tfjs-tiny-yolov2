@@ -6,7 +6,8 @@ export type TinyYolov2Config = {
   anchors: Point[]
   classes: string[]
   meanRgb?: [number, number, number]
-  withClassScores?: boolean
+  withClassScores?: boolean,
+  filterSizes?: number[]
 }
 
 export type TinyYolov2TrainableConfig = TinyYolov2Config & {

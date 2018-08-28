@@ -63,7 +63,7 @@
 
   <script>
     let scoreThreshold = 0.5
-    let sizeType = 'lg'
+    let sizeType = 'md'
 
     function onIncreaseThreshold() {
       scoreThreshold = Math.min(yolo.round(scoreThreshold + 0.1), 1.0)
@@ -124,7 +124,7 @@
     $(document).ready(function() {
       renderNavBar('#navbar', 'voc_object_detection')
 
-      const images = [1, 2, 3, 4, 5].map(n => `images/voc_object_detection/${n}.jpg`)
+      const images = [1, 2, 3, 4, 5, 6].map(n => `images/object_detection/${n}.jpg`)
       renderImageSelectList(
         '#selectList',
         async (uri) => {

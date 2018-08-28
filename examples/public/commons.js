@@ -82,6 +82,10 @@ function renderNavBar(navbarId, exampleUri) {
       name: 'VOC Object Detection'
     },
     {
+      uri: 'coco_object_detection',
+      name: 'COCO Object Detection'
+    },
+    {
       uri: 'face_detection',
       name: 'Face Detection'
     }

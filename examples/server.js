@@ -15,6 +15,7 @@ app.use(express.static(path.join(__dirname, '../dist')))
 
 app.get('/', (req, res) => res.redirect('/voc_object_detection'))
 app.get('/voc_object_detection', (req, res) => res.sendFile(path.join(viewsDir, 'vocObjectDetection.html')))
+app.get('/coco_object_detection', (req, res) => res.sendFile(path.join(viewsDir, 'cocoObjectDetection.html')))
 app.get('/face_detection', (req, res) => res.sendFile(path.join(viewsDir, 'faceDetection.html')))
 
 app.post('/fetch_external_image', async (req, res) => {

@@ -74,7 +74,13 @@ export class TinyYolov2Trainable extends TinyYolov2 {
           classLoss: classLoss.dataSync()[0]
         }
 
-        reportLosses(losses, filteredGroundTruthBoxes.length)
+        const report = {
+          losses,
+          numBoxes: filteredGroundTruthBoxes.length,
+          inputSize
+        }
+
+        reportLosses(report)
       }
 
       return totalLoss

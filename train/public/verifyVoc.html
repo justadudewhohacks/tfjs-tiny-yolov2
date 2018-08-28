@@ -149,7 +149,7 @@
           )
         })
 
-      //yolo.drawDetection('overlay', groundTruth, { boxColor: 'green' })
+      yolo.drawDetection('overlay', groundTruth, { boxColor: 'green' })
     }
 
     async function fetchTrainDataFilenames() {
@@ -165,7 +165,7 @@
 
       const config = await fetchJson(`tmp/voc_separable_conv_model_config.json`)
       net = new yolo.TinyYolov2(config)
-      await net.load(await loadNetWeights(`tmp/voc_e11.weights`))
+      await net.load(await loadNetWeights(`tmp/voc_e28_14800.weights`))
 
       window.boxJsonUris = await fetchTrainDataFilenames()
       window.imgUris = window.boxJsonUris.map(f => f.replace('.json', '.jpg'))

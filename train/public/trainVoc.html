@@ -3,6 +3,7 @@
 <head>
   <script src="tiny-yolo-v2.js"></script>
   <script src="commons.js"></script>
+  <script src="createLossReporter.js"></script>
   <script src="FileSaver.js"></script>
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.100.2/css/materialize.css">
@@ -15,22 +16,28 @@
     tf = yolo.tf
 
     // uri to weights file of last checkpoint
-    const modelCheckpoint = '/tmp/voc_e11.weights'
+    const modelCheckpoint = '/tmp/voc_e28_14800.weights'
 
     // continue training at epoch
-    const startEpoch = 11
+    const startEpoch = 29
 
     // optimizer used for loss minimization (I found adam with default parameters to work out)
-    window.optimizer = tf.train.adam(0.001, 0.9, 0.999, 1e-8)
+    const learningRate = 0.0001 // 0.001
+    window.optimizer = tf.train.adam(learningRate, 0.9, 0.999, 1e-8)
+
+    // ignore boxes if min dimension is smaller than 'minBoxSize'
+    window.minBoxSize = 64
 
     // save weights every 'saveEveryNthSample' images
     window.saveEveryNthSample = 400
 
     // image sizes at which each image is backward passed
-    window.trainSizes = [416] // = [160, 224, 320, 416]
+    window.trainSizes = [160, 224, 320, 416]
 
     // finish training after 'maxEpoch' epochs
     window.maxEpoch = Infinity
+
+    const lossReporter = createLossReporter(trainSizes)
 
     const log = (str, ...args) => console.log(`[${[(new Date()).toTimeString().substr(0, 8)]}] ${str || ''}`, ...args)
 
@@ -44,6 +51,7 @@
 
       if (inputSize === window.trainSizes[window.trainSizes.length - 1] && (idx % window.saveEveryNthSample) === 0) {
         saveWeights(window.net, `voc_e${epoch}_${idx}.weights`)
+        saveAs(new Blob([JSON.stringify(lossReporter.summary())]), `voc_e${epoch}_${idx}.json`)
       }
     }
 
@@ -56,7 +64,7 @@
     }
 
     async function load() {
-      window.boxJsonUris = await fetchTrainDataFilenames()
+      window.boxJsonUris = (await fetchTrainDataFilenames())
       window.config = await fetchJson(`/tmp/voc_separable_conv_model_config.json`)
       window.net = new yolo.TinyYolov2Trainable(window.config, window.optimizer)
 
@@ -68,6 +76,12 @@
       await load()
 
       for (let epoch = startEpoch; epoch < window.maxEpoch; epoch++) {
+
+        if (epoch !== startEpoch) {
+          saveWeights(window.net, `voc_epoch${epoch}.weights`)
+          saveAs(new Blob([JSON.stringify(lossReporter.summary())]), `voc_losses_epoch${epoch}.json`)
+        }
+        lossReporter.resetLosses()
 
         const shuffledInputs = yolo.shuffleArray(window.boxJsonUris)
 
@@ -84,14 +98,15 @@
             const inputSize = window.trainSizes[sizeIdx]
 
             const backwardOptions = {
-              minBoxSize: 32,
-              reportLosses: function(losses, numBoxes) {
+              minBoxSize: window.minBoxSize,
+              reportLosses: function({ losses, numBoxes, inputSize }) {
                 log(`ground truth boxes: ${numBoxes} (${inputSize})`)
                 log(`noObjectLoss[${dataIdx}]: ${yolo.round(losses.noObjectLoss, 4)}`)
                 log(`objectLoss[${dataIdx}]: ${yolo.round(losses.objectLoss, 4)}`)
                 log(`coordLoss[${dataIdx}]: ${yolo.round(losses.coordLoss, 4)}`)
                 log(`classLoss[${dataIdx}]: ${yolo.round(losses.classLoss, 4)}`)
                 log(`totalLoss[${dataIdx}]: ${yolo.round(losses.totalLoss, 4)}`)
+                lossReporter.reportLosses({ losses, numBoxes, inputSize })
               }
             }
 

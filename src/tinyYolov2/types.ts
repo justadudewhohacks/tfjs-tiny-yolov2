@@ -68,7 +68,13 @@ export type YoloLoss = {
   classLoss: number
 }
 
+export type LossReport = {
+  losses: YoloLoss
+  numBoxes: number
+  inputSize: number
+}
+
 export type TinyYolov2BackwardOptions = {
   minBoxSize?: number
-  reportLosses?: (losses: YoloLoss, numBoxes: number) => void
+  reportLosses?: (report: LossReport) => void
 }

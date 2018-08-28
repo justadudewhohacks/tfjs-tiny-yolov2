@@ -21,7 +21,7 @@ export default {
   ].concat(minify ? uglify() : []),
   output: {
     extend: true,
-    file: `dist/tiny-yolo-v2${minify ? '.min' : ''}.js`,
+    file: `dist/tiny-yolov2${minify ? '.min' : ''}.js`,
     format: 'umd',
     name: 'yolo',
     globals: {

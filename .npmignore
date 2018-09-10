@@ -1,8 +1,15 @@
 node_modules
 .rpt2_cache
+.env*
+
+tmp
+proto
+weights_uncompressed
+weights_unused
+_tfjs-image-recognition-base
+tfjs-image-recognition-base
 
 examples
-proto
 models
 train
 test

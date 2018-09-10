@@ -1404,6 +1404,24 @@
         SizeType["LG"] = "lg";
     })(SizeType || (SizeType = {}));
 
+    function extractSeparableConvParamsFactory(extractWeights, paramMappings) {
+        return function (channelsIn, channelsOut, mappedPrefix) {
+            var depthwise_filter = tensor4d(extractWeights(3 * 3 * channelsIn), [3, 3, channelsIn, 1]);
+            var pointwise_filter = tensor4d(extractWeights(channelsIn * channelsOut), [1, 1, channelsIn, channelsOut]);
+            var bias = tensor1d(extractWeights(channelsOut));
+            paramMappings.push({ paramPath: mappedPrefix + "/depthwise_filter" }, { paramPath: mappedPrefix + "/pointwise_filter" }, { paramPath: mappedPrefix + "/bias" });
+            return new SeparableConvParams(depthwise_filter, pointwise_filter, bias);
+        };
+    }
+    function loadSeparableConvParamsFactory(extractWeightEntry) {
+        return function (prefix) {
+            var depthwise_filter = extractWeightEntry(prefix + "/depthwise_filter", 4);
+            var pointwise_filter = extractWeightEntry(prefix + "/pointwise_filter", 4);
+            var bias = extractWeightEntry(prefix + "/bias", 1);
+            return new SeparableConvParams(depthwise_filter, pointwise_filter, bias);
+        };
+    }
+
     var isNumber = function (arg) { return typeof arg === 'number'; };
     function validateConfig(config) {
         if (!config) {
@@ -1482,13 +1500,7 @@
             var bn = extractBatchNormParams(channelsOut, mappedPrefix + "/bn");
             return { conv: conv, bn: bn };
         }
-        function extractSeparableConvParams(channelsIn, channelsOut, mappedPrefix) {
-            var depthwise_filter = tensor4d(extractWeights(3 * 3 * channelsIn), [3, 3, channelsIn, 1]);
-            var pointwise_filter = tensor4d(extractWeights(channelsIn * channelsOut), [1, 1, channelsIn, channelsOut]);
-            var bias = tensor1d(extractWeights(channelsOut));
-            paramMappings.push({ paramPath: mappedPrefix + "/depthwise_filter" }, { paramPath: mappedPrefix + "/pointwise_filter" }, { paramPath: mappedPrefix + "/bias" });
-            return new SeparableConvParams(depthwise_filter, pointwise_filter, bias);
-        }
+        var extractSeparableConvParams = extractSeparableConvParamsFactory(extractWeights, paramMappings);
         return {
             extractConvParams: extractConvParams,
             extractConvWithBatchNormParams: extractConvWithBatchNormParams,
@@ -1546,12 +1558,7 @@
             var bn = extractBatchNormParams(prefix + "/bn");
             return { conv: conv, bn: bn };
         }
-        function extractSeparableConvParams(prefix) {
-            var depthwise_filter = extractWeightEntry(prefix + "/depthwise_filter", 4);
-            var pointwise_filter = extractWeightEntry(prefix + "/pointwise_filter", 4);
-            var bias = extractWeightEntry(prefix + "/bias", 1);
-            return new SeparableConvParams(depthwise_filter, pointwise_filter, bias);
-        }
+        var extractSeparableConvParams = loadSeparableConvParamsFactory(extractWeightEntry);
         return {
             extractConvParams: extractConvParams,
             extractConvWithBatchNormParams: extractConvWithBatchNormParams,
@@ -2251,6 +2258,8 @@
     exports.convLayer = convLayer;
     exports.extractConvParamsFactory = extractConvParamsFactory;
     exports.extractFCParamsFactory = extractFCParamsFactory;
+    exports.extractSeparableConvParamsFactory = extractSeparableConvParamsFactory;
+    exports.loadSeparableConvParamsFactory = loadSeparableConvParamsFactory;
     exports.TinyYolov2 = TinyYolov2;
     exports.TinyYolov2LossFunction = TinyYolov2LossFunction;
     exports.TinyYolov2Trainable = TinyYolov2Trainable;

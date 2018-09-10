@@ -2,7 +2,8 @@ import * as tf from '@tensorflow/tfjs-core';
 import { extractWeightsFactory, ExtractWeightsFunction, ParamMapping } from 'tfjs-image-recognition-base';
 
 import { extractConvParamsFactory } from '../common';
-import { BatchNorm, ConvWithBatchNorm, NetParams, SeparableConvParams } from './types';
+import { extractSeparableConvParamsFactory } from '../common/extractSeparableConvParamsFactory';
+import { BatchNorm, ConvWithBatchNorm, NetParams } from './types';
 
 function extractorsFactory(extractWeights: ExtractWeightsFunction, paramMappings: ParamMapping[]) {
 
@@ -28,24 +29,7 @@ function extractorsFactory(extractWeights: ExtractWeightsFunction, paramMappings
 
     return { conv, bn }
   }
-
-  function extractSeparableConvParams(channelsIn: number, channelsOut: number, mappedPrefix: string): SeparableConvParams {
-    const depthwise_filter = tf.tensor4d(extractWeights(3 * 3 * channelsIn), [3, 3, channelsIn, 1])
-    const pointwise_filter = tf.tensor4d(extractWeights(channelsIn * channelsOut), [1, 1, channelsIn, channelsOut])
-    const bias = tf.tensor1d(extractWeights(channelsOut))
-
-    paramMappings.push(
-      { paramPath: `${mappedPrefix}/depthwise_filter` },
-      { paramPath: `${mappedPrefix}/pointwise_filter` },
-      { paramPath: `${mappedPrefix}/bias` }
-    )
-
-    return new SeparableConvParams(
-      depthwise_filter,
-      pointwise_filter,
-      bias
-    )
-  }
+  const extractSeparableConvParams = extractSeparableConvParamsFactory(extractWeights, paramMappings)
 
   return {
     extractConvParams,

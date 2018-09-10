@@ -5,3 +5,5 @@ tmp
 proto
 weights_uncompressed
 weights_unused
+_tfjs-image-recognition-base
+tfjs-image-recognition-base

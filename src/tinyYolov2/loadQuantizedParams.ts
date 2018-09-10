@@ -7,7 +7,8 @@ import {
 } from 'tfjs-image-recognition-base';
 
 import { ConvParams } from '../common';
-import { BatchNorm, ConvWithBatchNorm, NetParams, SeparableConvParams } from './types';
+import { loadSeparableConvParamsFactory } from '../common/extractSeparableConvParamsFactory';
+import { BatchNorm, ConvWithBatchNorm, NetParams } from './types';
 
 function extractorsFactory(weightMap: any, paramMappings: ParamMapping[]) {
 
@@ -31,17 +32,7 @@ function extractorsFactory(weightMap: any, paramMappings: ParamMapping[]) {
     return { conv, bn }
   }
 
-  function extractSeparableConvParams(prefix: string): SeparableConvParams {
-    const depthwise_filter = extractWeightEntry<tf.Tensor4D>(`${prefix}/depthwise_filter`, 4)
-    const pointwise_filter = extractWeightEntry<tf.Tensor4D>(`${prefix}/pointwise_filter`, 4)
-    const bias = extractWeightEntry<tf.Tensor1D>(`${prefix}/bias`, 1)
-
-    return new SeparableConvParams(
-      depthwise_filter,
-      pointwise_filter,
-      bias
-    )
-  }
+  const extractSeparableConvParams = loadSeparableConvParamsFactory(extractWeightEntry)
 
   return {
     extractConvParams,

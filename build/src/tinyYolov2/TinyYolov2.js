@@ -114,7 +114,7 @@ var TinyYolov2 = /** @class */ (function (_super) {
                         boxes = results.map(function (res) { return res.box; });
                         scores = results.map(function (res) { return res.score; });
                         classScores = results.map(function (res) { return res.classScore; });
-                        classNames = results.map(function (res) { return _this.config.classes[res.classLabel]; });
+                        classNames = results.map(function (res) { return _this.config.classes[res.label]; });
                         indices = nonMaxSuppression(boxes.map(function (box) { return box.rescale(inputSize); }), scores, this.config.iouThreshold, true);
                         detections = indices.map(function (idx) {
                             return new ObjectDetection(scores[idx], classScores[idx], classNames[idx], boxes[idx].toRect(), inputDimensions);
@@ -171,8 +171,8 @@ var TinyYolov2 = /** @class */ (function (_super) {
                         var pos = { row: row, col: col, anchor: anchor };
                         var _b = this.withClassScores
                             ? this.extractPredictedClass(classScoresTensor, pos)
-                            : { classScore: 1, classLabel: 0 }, classScore = _b.classScore, classLabel = _b.classLabel;
-                        results.push(tslib_1.__assign({ box: new BoundingBox(x, y, x + width_1, y + height_1), score: score, classScore: score * classScore, classLabel: classLabel }, pos));
+                            : { classScore: 1, label: 0 }, classScore = _b.classScore, label = _b.label;
+                        results.push(tslib_1.__assign({ box: new BoundingBox(x, y, x + width_1, y + height_1), score: score, classScore: score * classScore, label: label }, pos));
                     }
                 }
             }
@@ -186,9 +186,9 @@ var TinyYolov2 = /** @class */ (function (_super) {
         var row = pos.row, col = pos.col, anchor = pos.anchor;
         return Array(this.config.classes.length).fill(0)
             .map(function (_, i) { return classesTensor.get(row, col, anchor, i); })
-            .map(function (classScore, classLabel) { return ({
+            .map(function (classScore, label) { return ({
             classScore: classScore,
-            classLabel: classLabel
+            label: label
         }); })
             .reduce(function (max, curr) { return max.classScore > curr.classScore ? max : curr; });
     };

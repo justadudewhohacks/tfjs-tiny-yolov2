@@ -44,7 +44,7 @@ var TinyYolov2 = /** @class */ (function (_super) {
             throw new Error('TinyYolov2 - load model before inference');
         }
         var out = tf.tidy(function () {
-            var batchTensor = input.toBatchTensor(inputSize, false);
+            var batchTensor = input.toBatchTensor(inputSize, false).toFloat();
             batchTensor = _this.config.meanRgb
                 ? normalize(batchTensor, _this.config.meanRgb)
                 : batchTensor;
@@ -75,7 +75,7 @@ var TinyYolov2 = /** @class */ (function (_super) {
                 switch (_b.label) {
                     case 0:
                         _a = this.forwardInput;
-                        return [4 /*yield*/, toNetInput(input, true, true)];
+                        return [4 /*yield*/, toNetInput(input)];
                     case 1: return [4 /*yield*/, _a.apply(this, [_b.sent(), inputSize])];
                     case 2: return [2 /*return*/, _b.sent()];
                 }
@@ -97,7 +97,7 @@ var TinyYolov2 = /** @class */ (function (_super) {
                         if (typeof inputSize !== 'number') {
                             throw new Error("TinyYolov2 - unknown inputSize: " + inputSize + ", expected number or one of xs | sm | md | lg");
                         }
-                        return [4 /*yield*/, toNetInput(input, true)];
+                        return [4 /*yield*/, toNetInput(input)];
                     case 1:
                         netInput = _b.sent();
                         return [4 /*yield*/, this.forwardInput(netInput, inputSize)];
@@ -114,10 +114,10 @@ var TinyYolov2 = /** @class */ (function (_super) {
                         boxes = results.map(function (res) { return res.box; });
                         scores = results.map(function (res) { return res.score; });
                         classScores = results.map(function (res) { return res.classScore; });
-                        classNames = results.map(function (res) { return _this.config.classes[res.classLabel]; });
+                        classNames = results.map(function (res) { return _this.config.classes[res.label]; });
                         indices = nonMaxSuppression(boxes.map(function (box) { return box.rescale(inputSize); }), scores, this.config.iouThreshold, true);
                         detections = indices.map(function (idx) {
-                            return new ObjectDetection(scores[idx], classScores[idx], classNames[idx], boxes[idx].toRect(), inputDimensions);
+                            return new ObjectDetection(scores[idx], classScores[idx], classNames[idx], boxes[idx], inputDimensions);
                         });
                         return [2 /*return*/, detections];
                 }
@@ -171,8 +171,8 @@ var TinyYolov2 = /** @class */ (function (_super) {
                         var pos = { row: row, col: col, anchor: anchor };
                         var _b = this.withClassScores
                             ? this.extractPredictedClass(classScoresTensor, pos)
-                            : { classScore: 1, classLabel: 0 }, classScore = _b.classScore, classLabel = _b.classLabel;
-                        results.push(tslib_1.__assign({ box: new BoundingBox(x, y, x + width_1, y + height_1), score: score, classScore: score * classScore, classLabel: classLabel }, pos));
+                            : { classScore: 1, label: 0 }, classScore = _b.classScore, label = _b.label;
+                        results.push(tslib_1.__assign({ box: new BoundingBox(x, y, x + width_1, y + height_1), score: score, classScore: score * classScore, label: label }, pos));
                     }
                 }
             }
@@ -186,9 +186,9 @@ var TinyYolov2 = /** @class */ (function (_super) {
         var row = pos.row, col = pos.col, anchor = pos.anchor;
         return Array(this.config.classes.length).fill(0)
             .map(function (_, i) { return classesTensor.get(row, col, anchor, i); })
-            .map(function (classScore, classLabel) { return ({
+            .map(function (classScore, label) { return ({
             classScore: classScore,
-            classLabel: classLabel
+            label: label
         }); })
             .reduce(function (max, curr) { return max.classScore > curr.classScore ? max : curr; });
     };

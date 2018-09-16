@@ -1,5 +1,5 @@
 import * as tf from '@tensorflow/tfjs-core';
-import { BoundingBox, IRect } from 'tfjs-image-recognition-base';
+import { Box, IRect } from 'tfjs-image-recognition-base';
 import { ConvParams } from '../common';
 export declare type BatchNorm = {
     sub: tf.Tensor1D;
@@ -38,11 +38,11 @@ export declare type GridPosition = {
     anchor: number;
 };
 export declare type GroundTruthWithGridPosition = GridPosition & {
-    box: BoundingBox;
-    classLabel: number;
+    box: Box;
+    label: number;
 };
 export declare type GroundTruth = IRect & {
-    classLabel: number;
+    label: number;
 };
 export declare type TinyYolov2ForwardParams = {
     inputSize?: SizeType | number;

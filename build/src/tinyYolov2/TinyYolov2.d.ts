@@ -32,7 +32,7 @@ export declare class TinyYolov2 extends NeuralNetwork<NetParams> {
         box: BoundingBox;
         score: number;
         classScore: number;
-        classLabel: number;
+        label: number;
     }[];
     private extractPredictedClass(classesTensor, pos);
 }

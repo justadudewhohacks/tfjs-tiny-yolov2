@@ -63,7 +63,6 @@ var TinyYolov2Trainable = /** @class */ (function (_super) {
                             }
                             return totalLoss;
                         }, true);
-                        netInput.dispose();
                         return [2 /*return*/, loss];
                 }
             });
@@ -86,7 +85,6 @@ var TinyYolov2Trainable = /** @class */ (function (_super) {
         return groundTruth.filter(function (_a) {
             var x = _a.x, y = _a.y, width = _a.width, height = _a.height;
             var box = (new Rect(x, y, width, height))
-                .toBoundingBox()
                 .rescale({ height: imgHeight, width: imgWidth });
             var isTooTiny = box.width < minBoxSize || box.height < minBoxSize;
             return !isTooTiny;

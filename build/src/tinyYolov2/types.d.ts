@@ -39,10 +39,10 @@ export declare type GridPosition = {
 };
 export declare type GroundTruthWithGridPosition = GridPosition & {
     box: BoundingBox;
-    classLabel: number;
+    label: number;
 };
 export declare type GroundTruth = IRect & {
-    classLabel: number;
+    label: number;
 };
 export declare type TinyYolov2ForwardParams = {
     inputSize?: SizeType | number;

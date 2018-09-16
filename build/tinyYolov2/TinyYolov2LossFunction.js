@@ -182,9 +182,9 @@ var TinyYolov2LossFunction = /** @class */ (function () {
     TinyYolov2LossFunction.prototype.validateGroundTruthBoxes = function (groundTruth) {
         var _this = this;
         groundTruth.forEach(function (_a) {
-            var x = _a.x, y = _a.y, width = _a.width, height = _a.height, classLabel = _a.classLabel;
-            if (typeof classLabel !== 'number' || classLabel < 0 || classLabel > (_this.config.classes.length - 1)) {
-                throw new Error("invalid ground truth data, expected classLabel to be a number in [0, " + (_this.config.classes.length - 1) + "]");
+            var x = _a.x, y = _a.y, width = _a.width, height = _a.height, label = _a.label;
+            if (typeof label !== 'number' || label < 0 || label > (_this.config.classes.length - 1)) {
+                throw new Error("invalid ground truth data, expected label to be a number in [0, " + (_this.config.classes.length - 1) + "]");
             }
             if (x < 0 || x > 1 || y < 0 || y > 1 || width < 0 || (x + width) > 1 || height < 0 || (y + height) > 1) {
                 throw new Error("invalid ground truth data, box is out of image boundaries " + JSON.stringify({ x: x, y: y, width: width, height: height }));
@@ -195,15 +195,15 @@ var TinyYolov2LossFunction = /** @class */ (function () {
         var _this = this;
         var groundTruthBoxes = groundTruth
             .map(function (_a) {
-            var x = _a.x, y = _a.y, width = _a.width, height = _a.height, classLabel = _a.classLabel;
+            var x = _a.x, y = _a.y, width = _a.width, height = _a.height, label = _a.label;
             return ({
-                box: (new Rect(x, y, width, height)).toBoundingBox(),
-                classLabel: classLabel
+                box: new Rect(x, y, width, height),
+                label: label
             });
         });
         return groundTruthBoxes.map(function (_a) {
-            var box = _a.box, classLabel = _a.classLabel;
-            var _b = box.rescale(_this.reshapedImgDims), left = _b.left, top = _b.top, width = _b.width, height = _b.height;
+            var box = _a.box, label = _a.label;
+            var _b = box.rescale(_this.reshapedImgDims), left = _b.left, top = _b.top, bottom = _b.bottom, right = _b.right, x = _b.x, y = _b.y, width = _b.width, height = _b.height;
             var ctX = left + (width / 2);
             var ctY = top + (height / 2);
             var col = Math.floor((ctX / _this.inputSize) * _this.numCells);
@@ -213,7 +213,7 @@ var TinyYolov2LossFunction = /** @class */ (function () {
                 iou: iou(new BoundingBox(0, 0, anchor.x * CELL_SIZE, anchor.y * CELL_SIZE), new BoundingBox(0, 0, width, height))
             }); }).sort(function (a1, a2) { return a2.iou - a1.iou; });
             var anchor = anchorsByIou[0].idx;
-            return { row: row, col: col, anchor: anchor, box: box, classLabel: classLabel };
+            return { row: row, col: col, anchor: anchor, box: box, label: label };
         });
     };
     TinyYolov2LossFunction.prototype.createGroundTruthMask = function () {
@@ -256,8 +256,8 @@ var TinyYolov2LossFunction = /** @class */ (function () {
         var buf = mask.buffer();
         var classValuesOffset = 5;
         this.groundTruth.forEach(function (_a) {
-            var row = _a.row, col = _a.col, anchor = _a.anchor, classLabel = _a.classLabel;
-            buf.set(1, row, col, anchor, classValuesOffset + classLabel);
+            var row = _a.row, col = _a.col, anchor = _a.anchor, label = _a.label;
+            buf.set(1, row, col, anchor, classValuesOffset + label);
         });
         return mask;
     };

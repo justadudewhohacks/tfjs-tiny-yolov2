@@ -158,7 +158,7 @@ Consider an image with a width and height of 400px, showing a single cat, which 
     "y": 0.25,
     "width": 0.5,
     "height": 0.25,
-    "classLabel": "cat"
+    "label": "cat"
   }
 ]
 ```

@@ -21,7 +21,7 @@
   "license": "MIT",
   "dependencies": {
     "@tensorflow/tfjs-core": "^0.12.14",
-    "tfjs-image-recognition-base": "0.0.0"
+    "tfjs-image-recognition-base": "0.1.0"
   },
   "devDependencies": {
     "@types/jasmine": "^2.8.8",

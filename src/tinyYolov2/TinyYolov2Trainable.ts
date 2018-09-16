@@ -86,8 +86,6 @@ export class TinyYolov2Trainable extends TinyYolov2 {
       return totalLoss
     }, true)
 
-    netInput.dispose()
-
     return loss
   }
 
@@ -115,7 +113,6 @@ export class TinyYolov2Trainable extends TinyYolov2 {
 
     return groundTruth.filter(({ x, y, width, height }) => {
       const box = (new Rect(x, y, width, height))
-        .toBoundingBox()
         .rescale({ height: imgHeight, width: imgWidth })
 
       const isTooTiny = box.width < minBoxSize || box.height < minBoxSize

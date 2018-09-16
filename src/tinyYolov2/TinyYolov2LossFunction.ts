@@ -206,9 +206,9 @@ export class TinyYolov2LossFunction {
   }
 
   private validateGroundTruthBoxes(groundTruth: GroundTruth[]) {
-    groundTruth.forEach(({ x, y, width, height, classLabel }) => {
-      if (typeof classLabel !== 'number' || classLabel < 0 || classLabel > (this.config.classes.length - 1)) {
-        throw new Error(`invalid ground truth data, expected classLabel to be a number in [0, ${this.config.classes.length - 1}]`)
+    groundTruth.forEach(({ x, y, width, height, label }) => {
+      if (typeof label !== 'number' || label < 0 || label > (this.config.classes.length - 1)) {
+        throw new Error(`invalid ground truth data, expected label to be a number in [0, ${this.config.classes.length - 1}]`)
       }
 
       if (x < 0 || x > 1 || y < 0 || y > 1 || width < 0 || (x + width) > 1 || height < 0 || (y + height) > 1) {
@@ -218,15 +218,14 @@ export class TinyYolov2LossFunction {
   }
 
   private assignGroundTruthToAnchors(groundTruth: GroundTruth[]) {
-
     const groundTruthBoxes = groundTruth
-      .map(({ x, y, width, height, classLabel }) => ({
-        box: (new Rect(x, y, width, height)).toBoundingBox(),
-        classLabel
+      .map(({ x, y, width, height, label }) => ({
+        box: new Rect(x, y, width, height),
+        label
       }))
 
-    return groundTruthBoxes.map(({ box, classLabel }) => {
-      const { left, top, width, height } = box.rescale(this.reshapedImgDims)
+    return groundTruthBoxes.map(({ box, label }) => {
+      const { left, top, bottom, right, x, y, width, height } = box.rescale(this.reshapedImgDims)
 
       const ctX = left + (width / 2)
       const ctY = top + (height / 2)
@@ -244,7 +243,7 @@ export class TinyYolov2LossFunction {
 
       const anchor = anchorsByIou[0].idx
 
-      return { row, col, anchor, box, classLabel }
+      return { row, col, anchor, box, label }
     })
   }
 
@@ -295,8 +294,8 @@ export class TinyYolov2LossFunction {
     const buf = mask.buffer()
 
     const classValuesOffset = 5
-    this.groundTruth.forEach(({ row, col, anchor, classLabel }) => {
-      buf.set(1, row, col, anchor, classValuesOffset + classLabel)
+    this.groundTruth.forEach(({ row, col, anchor, label }) => {
+      buf.set(1, row, col, anchor, classValuesOffset + label)
     })
 
     return mask

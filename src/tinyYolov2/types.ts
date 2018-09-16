@@ -1,5 +1,5 @@
 import * as tf from '@tensorflow/tfjs-core';
-import { BoundingBox, IRect } from 'tfjs-image-recognition-base';
+import { Box, IRect } from 'tfjs-image-recognition-base';
 
 import { ConvParams } from '../common';
 
@@ -47,12 +47,12 @@ export type GridPosition = {
 }
 
 export type GroundTruthWithGridPosition = GridPosition & {
-  box: BoundingBox
-  classLabel: number
+  box: Box
+  label: number
 }
 
 export type GroundTruth = IRect & {
-  classLabel: number
+  label: number
 }
 
 export type TinyYolov2ForwardParams = {

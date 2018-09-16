@@ -91,7 +91,7 @@
 
           // fetch image and ground truth bounding boxes
           const img = await yolo.bufferToImage(await fetchImage(boxJsonUri.replace('.json', '.jpg')))
-          const groundTruth = (await fetchJson(boxJsonUri)).map(gt => ({ ...gt, classLabel: gt.label }))
+          const groundTruth = (await fetchJson(boxJsonUri)).map(gt => ({ ...gt, label: gt.label }))
 
           for (let sizeIdx = 0; sizeIdx < window.trainSizes.length; sizeIdx++) {
 

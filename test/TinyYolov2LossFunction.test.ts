@@ -1,6 +1,6 @@
 import * as tf from '@tensorflow/tfjs-core';
 
-import { inverseSigmoid, Rect } from '../src';
+import { inverseSigmoid, LabeledBox, Rect } from '../src';
 import { GridPosition, GroundTruth } from '../src/tinyYolov2/types';
 import { createFakeLossFunction, createFakeLossFunctionMd, expectTensorToBeZeros } from './utils';
 
@@ -24,7 +24,7 @@ describe('TinyYolov2LossFunction', () => {
 
     describe('single anchor', () => {
 
-      const groundTruth = { ...new Rect(0, 0, 0.25, 0.5), classLabel: 0 }
+      const groundTruth = new LabeledBox(new Rect(0, 0, 0.25, 0.5), 0)
 
       it('noObjectLossMask', () => tf.tidy(() => {
 
@@ -125,7 +125,7 @@ describe('TinyYolov2LossFunction', () => {
 
     describe('multiple anchors', () => {
 
-      const groundTruth = { ...new Rect(0, 0, 0.25, 0.5), classLabel: 0 }
+      const groundTruth = new LabeledBox(new Rect(0, 0, 0.25, 0.5), 0)
       const anchors = [{ x: 4, y: 4 }, { x: 1, y: 1 }, { x: 2, y: 2 }]
 
       it('noObjectLossMask', () => tf.tidy(() => {
@@ -162,10 +162,10 @@ describe('TinyYolov2LossFunction', () => {
         const boxSize = 1 / numCells
         const anchors = [{ x: 1, y: 1 }]
         const groundTruthBoxes = [
-          { ...new Rect(0, 0, boxSize, boxSize), classLabel: 0 },
-          { ...new Rect(0.9, 0.9, boxSize, boxSize), classLabel: 0 },
-          { ...new Rect(0.1, 0.9, boxSize, boxSize), classLabel: 0 },
-          { ...new Rect(0.9, 0.1, boxSize, boxSize), classLabel: 0 }
+          new LabeledBox(new Rect(0, 0, boxSize, boxSize), 0),
+          new LabeledBox(new Rect(0.9, 0.9, boxSize, boxSize), 0),
+          new LabeledBox(new Rect(0.1, 0.9, boxSize, boxSize), 0),
+          new LabeledBox(new Rect(0.9, 0.1, boxSize, boxSize), 0)
         ]
 
         const { groundTruth } = createFakeLossFunction(numCells, groundTruthBoxes, [], { anchors })
@@ -191,10 +191,10 @@ describe('TinyYolov2LossFunction', () => {
         const numCells = 10
         const anchors = [{ x: 1, y: 1 }, { x: 2, y: 2 }, { x: 4, y: 4 }, { x: 2, y: 4 }]
         const groundTruthBoxes = [
-          { ...new Rect(0, 0, 0.1, 0.1), classLabel: 0 },
-          { ...new Rect(0, 0, 0.2, 0.2), classLabel: 0 },
-          { ...new Rect(0, 0, 0.4, 0.4), classLabel: 0 },
-          { ...new Rect(0, 0, 0.2, 0.4), classLabel: 0 }
+          new LabeledBox(new Rect(0, 0, 0.1, 0.1), 0),
+          new LabeledBox(new Rect(0, 0, 0.2, 0.2), 0),
+          new LabeledBox(new Rect(0, 0, 0.4, 0.4), 0),
+          new LabeledBox(new Rect(0, 0, 0.2, 0.4), 0)
         ]
 
         const { groundTruth } = createFakeLossFunction(numCells, groundTruthBoxes, [], { anchors })
@@ -224,13 +224,13 @@ describe('TinyYolov2LossFunction', () => {
         expect((row + offsets.get(row, col, anchor, 1)) / numCells).toBeCloseTo(groundTruth.y + (groundTruth.height / 2), 2, 'y')
       }
 
-      testComputeBoxAdjusments({ ...new Rect(0, 0, 0.25, 0.25), classLabel: 0 } as GroundTruth, { row: 0, col: 0, anchor: 0 })
-      testComputeBoxAdjusments({ ...new Rect(0, 0, 0.5, 0.5), classLabel: 0 } as GroundTruth, { row: 0, col: 0, anchor: 0 })
-      testComputeBoxAdjusments({ ...new Rect(0.25, 0.25, 0.25, 0.25), classLabel: 0 } as GroundTruth, { row: 0, col: 0, anchor: 0 })
-      testComputeBoxAdjusments({ ...new Rect(0.5, 0.5, 0.25, 0.25), classLabel: 0 } as GroundTruth, { row: 1, col: 1, anchor: 0 })
-      testComputeBoxAdjusments({ ...new Rect(0.75, 0.75, 0.25, 0.25), classLabel: 0 } as GroundTruth, { row: 1, col: 1, anchor: 0 })
-      testComputeBoxAdjusments({ ...new Rect(0.25, 0.75, 0.25, 0.25), classLabel: 0 } as GroundTruth, { row: 1, col: 0, anchor: 0 })
-      testComputeBoxAdjusments({ ...new Rect(0.75, 0.25, 0.25, 0.25), classLabel: 0 } as GroundTruth, { row: 0, col: 1, anchor: 0 })
+      testComputeBoxAdjusments(new LabeledBox(new Rect(0, 0, 0.25, 0.25), 0) as GroundTruth, { row: 0, col: 0, anchor: 0 })
+      testComputeBoxAdjusments(new LabeledBox(new Rect(0, 0, 0.5, 0.5), 0) as GroundTruth, { row: 0, col: 0, anchor: 0 })
+      testComputeBoxAdjusments(new LabeledBox(new Rect(0.25, 0.25, 0.25, 0.25), 0) as GroundTruth, { row: 0, col: 0, anchor: 0 })
+      testComputeBoxAdjusments(new LabeledBox(new Rect(0.5, 0.5, 0.25, 0.25), 0) as GroundTruth, { row: 1, col: 1, anchor: 0 })
+      testComputeBoxAdjusments(new LabeledBox(new Rect(0.75, 0.75, 0.25, 0.25), 0) as GroundTruth, { row: 1, col: 1, anchor: 0 })
+      testComputeBoxAdjusments(new LabeledBox(new Rect(0.25, 0.75, 0.25, 0.25), 0) as GroundTruth, { row: 1, col: 0, anchor: 0 })
+      testComputeBoxAdjusments(new LabeledBox(new Rect(0.75, 0.25, 0.25, 0.25), 0) as GroundTruth, { row: 0, col: 1, anchor: 0 })
     }))
 
   })
@@ -248,13 +248,13 @@ describe('TinyYolov2LossFunction', () => {
         expect((Math.exp(boxAdjustments.get(row, col, anchor, 3)) * anchors[anchor].y) / numCells).toBeCloseTo(groundTruth.height, 2, 'height')
       }
 
-      testComputeBoxAdjusments({ ...new Rect(0, 0, 0.25, 0.25), classLabel: 0 } as GroundTruth, { row: 0, col: 0, anchor: 0 })
-      testComputeBoxAdjusments({ ...new Rect(0, 0, 0.5, 0.5), classLabel: 0 } as GroundTruth, { row: 0, col: 0, anchor: 0 })
-      testComputeBoxAdjusments({ ...new Rect(0.25, 0.25, 0.25, 0.25), classLabel: 0 } as GroundTruth, { row: 0, col: 0, anchor: 0 })
-      testComputeBoxAdjusments({ ...new Rect(0.5, 0.5, 0.25, 0.25), classLabel: 0 } as GroundTruth, { row: 1, col: 1, anchor: 0 })
-      testComputeBoxAdjusments({ ...new Rect(0.75, 0.75, 0.25, 0.25), classLabel: 0 } as GroundTruth, { row: 1, col: 1, anchor: 0 })
-      testComputeBoxAdjusments({ ...new Rect(0.25, 0.75, 0.25, 0.25), classLabel: 0 } as GroundTruth, { row: 1, col: 0, anchor: 0 })
-      testComputeBoxAdjusments({ ...new Rect(0.75, 0.25, 0.25, 0.25), classLabel: 0 } as GroundTruth, { row: 0, col: 1, anchor: 0 })
+      testComputeBoxAdjusments(new LabeledBox(new Rect(0, 0, 0.25, 0.25), 0) as GroundTruth, { row: 0, col: 0, anchor: 0 })
+      testComputeBoxAdjusments(new LabeledBox(new Rect(0, 0, 0.5, 0.5), 0) as GroundTruth, { row: 0, col: 0, anchor: 0 })
+      testComputeBoxAdjusments(new LabeledBox(new Rect(0.25, 0.25, 0.25, 0.25), 0) as GroundTruth, { row: 0, col: 0, anchor: 0 })
+      testComputeBoxAdjusments(new LabeledBox(new Rect(0.5, 0.5, 0.25, 0.25), 0) as GroundTruth, { row: 1, col: 1, anchor: 0 })
+      testComputeBoxAdjusments(new LabeledBox(new Rect(0.75, 0.75, 0.25, 0.25), 0) as GroundTruth, { row: 1, col: 1, anchor: 0 })
+      testComputeBoxAdjusments(new LabeledBox(new Rect(0.25, 0.75, 0.25, 0.25), 0) as GroundTruth, { row: 1, col: 0, anchor: 0 })
+      testComputeBoxAdjusments(new LabeledBox(new Rect(0.75, 0.25, 0.25, 0.25), 0) as GroundTruth, { row: 0, col: 1, anchor: 0 })
     }))
 
   })
@@ -263,8 +263,8 @@ describe('TinyYolov2LossFunction', () => {
 
     it('single box iou of 0.5', () => tf.tidy(() => {
 
-      const groundTruth = { ...new Rect(0, 0, 0.25, 0.5), classLabel: 0 }
-      const predictedBox = { box: new Rect(0, 0, 0.25, 0.25).toBoundingBox(), classLabel: 0, row: 0, col: 0, anchor: 0 }
+      const groundTruth = new LabeledBox(new Rect(0, 0, 0.25, 0.5), 0)
+      const predictedBox = { box: new Rect(0, 0, 0.25, 0.25), label: 0, row: 0, col: 0, anchor: 0 }
 
       const lossFunction = createFakeLossFunction(2, [groundTruth], [predictedBox])
       const buf = lossFunction.outputTensor.buffer()
@@ -276,10 +276,10 @@ describe('TinyYolov2LossFunction', () => {
 
     it('two box ious of 0.5', () => tf.tidy(() => {
 
-      const groundTruth = { ...new Rect(0, 0, 0.25, 0.5), classLabel: 0 }
-      const predictedBox = { box: new Rect(0, 0, 0.25, 0.25).toBoundingBox(), classLabel: 0, row: 0, col: 0, anchor: 0 }
-      const groundTruth2 = { ...new Rect(0.5, 0.5, 0.25, 0.5), classLabel: 0 }
-      const predictedBox2 = { box: new Rect(0.5, 0.5, 0.25, 0.25).toBoundingBox(), classLabel: 0, row: 1, col: 1, anchor: 0 }
+      const groundTruth = new LabeledBox(new Rect(0, 0, 0.25, 0.5), 0)
+      const predictedBox = { box: new Rect(0, 0, 0.25, 0.25), label: 0, row: 0, col: 0, anchor: 0 }
+      const groundTruth2 = new LabeledBox(new Rect(0.5, 0.5, 0.25, 0.5), 0)
+      const predictedBox2 = { box: new Rect(0.5, 0.5, 0.25, 0.25), label: 0, row: 1, col: 1, anchor: 0 }
 
       const lossFunction = createFakeLossFunction(2, [groundTruth, groundTruth2], [predictedBox, predictedBox2])
       const buf = lossFunction.outputTensor.buffer()
@@ -293,8 +293,8 @@ describe('TinyYolov2LossFunction', () => {
 
     it('single box no overlap', () => tf.tidy(() => {
 
-      const groundTruth = { ...new Rect(0, 0, 0.25, 0.25), classLabel: 0 }
-      const predictedBox = { box: new Rect(0.5, 0.5, 0.25, 0.25).toBoundingBox(), classLabel: 0, row: 0, col: 0, anchor: 0 }
+      const groundTruth = new LabeledBox(new Rect(0, 0, 0.25, 0.25), 0)
+      const predictedBox = { box: new Rect(0.5, 0.5, 0.25, 0.25), label: 0, row: 0, col: 0, anchor: 0 }
 
       const lossFunction = createFakeLossFunction(2, [groundTruth], [predictedBox])
       const buf = lossFunction.outputTensor.buffer()
@@ -307,8 +307,8 @@ describe('TinyYolov2LossFunction', () => {
     it('single box no overlap at anchor 1', () => tf.tidy(() => {
 
       const anchors = [{ x: 2, y: 2 }, { x: 1, y: 1 }, { x: 4, y: 4 }, { x: 2, y: 4 }]
-      const groundTruth = { ...new Rect(0, 0, 0.25, 0.25), classLabel: 0 }
-      const predictedBox = { box: new Rect(0.5, 0.5, 0.25, 0.25).toBoundingBox(), classLabel: 0, row: 0, col: 0, anchor: 1 }
+      const groundTruth = new LabeledBox(new Rect(0, 0, 0.25, 0.25), 0)
+      const predictedBox = { box: new Rect(0.5, 0.5, 0.25, 0.25), label: 0, row: 0, col: 0, anchor: 1 }
 
       const lossFunction = createFakeLossFunction(2, [groundTruth], [predictedBox], { anchors })
       const buf = lossFunction.outputTensor.buffer()
@@ -322,8 +322,8 @@ describe('TinyYolov2LossFunction', () => {
 
     it('single box no overlap at grid (1, 1)', () => tf.tidy(() => {
 
-      const groundTruth = { ...new Rect(0.5, 0.5, 0.25, 0.25), classLabel: 0 }
-      const predictedBox = { box: new Rect(0.75, 0.75, 0.25, 0.25).toBoundingBox(), classLabel: 0, row: 1, col: 1, anchor: 0 }
+      const groundTruth = new LabeledBox(new Rect(0.5, 0.5, 0.25, 0.25), 0)
+      const predictedBox = { box: new Rect(0.75, 0.75, 0.25, 0.25), label: 0, row: 1, col: 1, anchor: 0 }
 
       const lossFunction = createFakeLossFunction(2, [groundTruth], [predictedBox])
       const buf = lossFunction.outputTensor.buffer()
@@ -335,8 +335,8 @@ describe('TinyYolov2LossFunction', () => {
 
     it('single box no overlap at grid (9, 9)', () => tf.tidy(() => {
 
-      const groundTruth = { ...new Rect(0.9, 0.9, 0.05, 0.05), classLabel: 0 }
-      const predictedBox = { box: new Rect(0.95, 0.95, 0.05, 0.05).toBoundingBox(), classLabel: 0, row: 9, col: 9, anchor: 0 }
+      const groundTruth = new LabeledBox(new Rect(0.9, 0.9, 0.05, 0.05), 0)
+      const predictedBox = { box: new Rect(0.95, 0.95, 0.05, 0.05), label: 0, row: 9, col: 9, anchor: 0 }
 
       const lossFunction = createFakeLossFunction(10, [groundTruth], [predictedBox])
       const buf = lossFunction.outputTensor.buffer()
@@ -356,7 +356,7 @@ describe('TinyYolov2LossFunction', () => {
 
         const numCells = 2
         const anchor = { x: 2, y: 4 }
-        const groundTruth = { ...new Rect(0, 0.125, 0.5, 0.25), classLabel: 0 }
+        const groundTruth = new LabeledBox(new Rect(0, 0.125, 0.5, 0.25), 0)
         const lossFunction = createFakeLossFunction(numCells, [groundTruth], [], { anchors: [anchor]})
         const buf = lossFunction.outputTensor.buffer()
 
@@ -373,7 +373,7 @@ describe('TinyYolov2LossFunction', () => {
 
         const numCells = 2
         const anchor = { x: 2, y: 4 }
-        const groundTruth = { ...new Rect(0.5, 0.5, 0.5, 0.25), classLabel: 0 }
+        const groundTruth = new LabeledBox(new Rect(0.5, 0.5, 0.5, 0.25), 0)
         const lossFunction = createFakeLossFunction(numCells, [groundTruth], [], { anchors: [anchor]})
         const buf = lossFunction.outputTensor.buffer()
 
@@ -391,7 +391,7 @@ describe('TinyYolov2LossFunction', () => {
         const numCells = 2
         const anchor = { x: 2, y: 4 }
         const anchors = [{ x: 100, y: 100 }, anchor]
-        const groundTruth = { ...new Rect(0.5, 0.5, 0.5, 0.25), classLabel: 0 }
+        const groundTruth = new LabeledBox(new Rect(0.5, 0.5, 0.5, 0.25), 0)
         const lossFunction = createFakeLossFunction(numCells, [groundTruth], [], { anchors })
         const buf = lossFunction.outputTensor.buffer()
 
@@ -412,7 +412,7 @@ describe('TinyYolov2LossFunction', () => {
 
         const numCells = 2
         const anchor = { x: 2, y: 4 }
-        const groundTruth = { ...new Rect(0, 0.125, 0.5, 0.25), classLabel: 0 }
+        const groundTruth = new LabeledBox(new Rect(0, 0.125, 0.5, 0.25), 0)
         const lossFunction = createFakeLossFunction(numCells, [groundTruth], [], { anchors: [anchor]})
         const buf = lossFunction.outputTensor.buffer()
 
@@ -429,7 +429,7 @@ describe('TinyYolov2LossFunction', () => {
 
         const numCells = 2
         const anchor = { x: 2, y: 4 }
-        const groundTruth = { ...new Rect(0.5, 0.5, 0.5, 0.25), classLabel: 0 }
+        const groundTruth = new LabeledBox(new Rect(0.5, 0.5, 0.5, 0.25), 0)
         const lossFunction = createFakeLossFunction(numCells, [groundTruth], [], { anchors: [anchor]})
         const buf = lossFunction.outputTensor.buffer()
 
@@ -447,7 +447,7 @@ describe('TinyYolov2LossFunction', () => {
         const numCells = 2
         const anchor = { x: 2, y: 4 }
         const anchors = [{ x: 100, y: 100 }, anchor]
-        const groundTruth = { ...new Rect(0.5, 0.5, 0.5, 0.25), classLabel: 0 }
+        const groundTruth = new LabeledBox(new Rect(0.5, 0.5, 0.5, 0.25), 0)
         const lossFunction = createFakeLossFunction(numCells, [groundTruth], [], { anchors })
         const buf = lossFunction.outputTensor.buffer()
 
@@ -473,7 +473,7 @@ describe('TinyYolov2LossFunction', () => {
 
         const numCells = 2
         const anchor = { x: 2, y: 4 }
-        const groundTruth = { ...new Rect(0, 0, 0.5, 0.5), classLabel: 0 }
+        const groundTruth = new LabeledBox(new Rect(0, 0, 0.5, 0.5), 0)
         const lossFunction = createFakeLossFunction(numCells, [groundTruth], [], { anchors: [anchor]})
         const buf = lossFunction.outputTensor.buffer()
 
@@ -490,7 +490,7 @@ describe('TinyYolov2LossFunction', () => {
 
         const numCells = 2
         const anchor = { x: 2, y: 4 }
-        const groundTruth = { ...new Rect(0.5, 0.5, 0.5, 0.5), classLabel: 0 }
+        const groundTruth = new LabeledBox(new Rect(0.5, 0.5, 0.5, 0.5), 0)
         const lossFunction = createFakeLossFunction(numCells, [groundTruth], [], { anchors: [anchor]})
         const buf = lossFunction.outputTensor.buffer()
 
@@ -508,7 +508,7 @@ describe('TinyYolov2LossFunction', () => {
         const numCells = 2
         const anchor = { x: 2, y: 4 }
         const anchors = [{ x: 100, y: 100 }, anchor]
-        const groundTruth = { ...new Rect(0.5, 0.5, 0.5, 0.5), classLabel: 0 }
+        const groundTruth = new LabeledBox(new Rect(0.5, 0.5, 0.5, 0.5), 0)
         const lossFunction = createFakeLossFunction(numCells, [groundTruth], [], { anchors })
         const buf = lossFunction.outputTensor.buffer()
 
@@ -529,7 +529,7 @@ describe('TinyYolov2LossFunction', () => {
 
         const numCells = 2
         const anchor = { x: 2, y: 4 }
-        const groundTruth = { ...new Rect(0, 0, 0.5, 0.5), classLabel: 0 }
+        const groundTruth = new LabeledBox(new Rect(0, 0, 0.5, 0.5), 0)
         const lossFunction = createFakeLossFunction(numCells, [groundTruth], [], { anchors: [anchor]})
         const buf = lossFunction.outputTensor.buffer()
 
@@ -546,7 +546,7 @@ describe('TinyYolov2LossFunction', () => {
 
         const numCells = 2
         const anchor = { x: 2, y: 4 }
-        const groundTruth = { ...new Rect(0.5, 0.5, 0.5, 0.5), classLabel: 0 }
+        const groundTruth = new LabeledBox(new Rect(0.5, 0.5, 0.5, 0.5), 0)
         const lossFunction = createFakeLossFunction(numCells, [groundTruth], [], { anchors: [anchor]})
         const buf = lossFunction.outputTensor.buffer()
 
@@ -564,7 +564,7 @@ describe('TinyYolov2LossFunction', () => {
         const numCells = 2
         const anchor = { x: 2, y: 4 }
         const anchors = [{ x: 100, y: 100 }, anchor]
-        const groundTruth = { ...new Rect(0.5, 0.5, 0.5, 0.5), classLabel: 0 }
+        const groundTruth = new LabeledBox(new Rect(0.5, 0.5, 0.5, 0.5), 0)
         const lossFunction = createFakeLossFunction(numCells, [groundTruth], [], { anchors })
         const buf = lossFunction.outputTensor.buffer()
 
@@ -591,7 +591,7 @@ describe('TinyYolov2LossFunction', () => {
       it('single box at grid (0, 0), center offset = 0.5', () => tf.tidy(() => {
 
         const numCells = 2
-        const groundTruth = { ...new Rect(0, 0, 0.5, 0.5), classLabel: 0 }
+        const groundTruth = new LabeledBox(new Rect(0, 0, 0.5, 0.5), 0)
         const lossFunction = createFakeLossFunction(numCells, [groundTruth], [], { anchors: [{ x: 1, y: 1 }]})
         const buf = lossFunction.outputTensor.buffer()
 
@@ -607,7 +607,7 @@ describe('TinyYolov2LossFunction', () => {
       it('single box at grid (1, 1), center offset = 0.5', () => tf.tidy(() => {
 
         const numCells = 2
-        const groundTruth = { ...new Rect(0.5, 0.5, 0.5, 0.5), classLabel: 0 }
+        const groundTruth = new LabeledBox(new Rect(0.5, 0.5, 0.5, 0.5), 0)
         const lossFunction = createFakeLossFunction(numCells, [groundTruth], [], { anchors: [{ x: 1, y: 1 }]})
         const buf = lossFunction.outputTensor.buffer()
 
@@ -623,7 +623,7 @@ describe('TinyYolov2LossFunction', () => {
       it('single box at grid (0, 0), center offset almost 1', () => tf.tidy(() => {
 
         const numCells = 2
-        const groundTruth = { ...new Rect(0.25, 0.25, 0.49, 0.49), classLabel: 0 }
+        const groundTruth = new LabeledBox(new Rect(0.25, 0.25, 0.49, 0.49), 0)
         const lossFunction = createFakeLossFunction(numCells, [groundTruth], [], { anchors: [{ x: 1, y: 1 }]})
         const buf = lossFunction.outputTensor.buffer()
 
@@ -639,7 +639,7 @@ describe('TinyYolov2LossFunction', () => {
       it('single box at grid (1, 1), center offset almost 0', () => tf.tidy(() => {
 
         const numCells = 2
-        const groundTruth = { ...new Rect(0.25, 0.25, 0.51, 0.51), classLabel: 0 }
+        const groundTruth = new LabeledBox(new Rect(0.25, 0.25, 0.51, 0.51), 0)
         const lossFunction = createFakeLossFunction(numCells, [groundTruth], [], { anchors: [{ x: 1, y: 1 }]})
         const buf = lossFunction.outputTensor.buffer()
 

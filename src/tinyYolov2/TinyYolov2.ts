@@ -53,7 +53,7 @@ export class TinyYolov2 extends NeuralNetwork<NetParams> {
 
     const out = tf.tidy(() => {
 
-      let batchTensor = input.toBatchTensor(inputSize, false)
+      let batchTensor = input.toBatchTensor(inputSize, false).toFloat()
       batchTensor = this.config.meanRgb
         ? normalize(batchTensor, this.config.meanRgb)
         : batchTensor
@@ -82,7 +82,7 @@ export class TinyYolov2 extends NeuralNetwork<NetParams> {
   }
 
   public async forward(input: TNetInput, inputSize: number): Promise<tf.Tensor4D> {
-    return await this.forwardInput(await toNetInput(input, true, true), inputSize)
+    return await this.forwardInput(await toNetInput(input), inputSize)
   }
 
   public async detect(input: TNetInput, forwardParams: TinyYolov2ForwardParams = {}): Promise<ObjectDetection[]> {
@@ -97,7 +97,7 @@ export class TinyYolov2 extends NeuralNetwork<NetParams> {
       throw new Error(`TinyYolov2 - unknown inputSize: ${inputSize}, expected number or one of xs | sm | md | lg`)
     }
 
-    const netInput = await toNetInput(input, true)
+    const netInput = await toNetInput(input)
     const out = await this.forwardInput(netInput, inputSize)
     const out0 = tf.tidy(() => tf.unstack(out)[0].expandDims()) as tf.Tensor4D
 
@@ -113,7 +113,7 @@ export class TinyYolov2 extends NeuralNetwork<NetParams> {
     const boxes = results.map(res => res.box)
     const scores = results.map(res => res.score)
     const classScores = results.map(res => res.classScore)
-    const classNames = results.map(res => this.config.classes[res.classLabel])
+    const classNames = results.map(res => this.config.classes[res.label])
 
     const indices = nonMaxSuppression(
       boxes.map(box => box.rescale(inputSize)),
@@ -127,7 +127,7 @@ export class TinyYolov2 extends NeuralNetwork<NetParams> {
         scores[idx],
         classScores[idx],
         classNames[idx],
-        boxes[idx].toRect(),
+        boxes[idx],
         inputDimensions
       )
     )
@@ -194,15 +194,15 @@ export class TinyYolov2 extends NeuralNetwork<NetParams> {
             const y = (ctY - (height / 2))
 
             const pos = { row, col, anchor }
-            const { classScore, classLabel } = this.withClassScores
+            const { classScore, label } = this.withClassScores
               ? this.extractPredictedClass(classScoresTensor as tf.Tensor4D, pos)
-              : { classScore: 1, classLabel: 0 }
+              : { classScore: 1, label: 0 }
 
             results.push({
               box: new BoundingBox(x, y, x + width, y + height),
               score: score,
               classScore: score * classScore,
-              classLabel,
+              label,
               ...pos
             })
           }
@@ -221,9 +221,9 @@ export class TinyYolov2 extends NeuralNetwork<NetParams> {
     const { row, col, anchor } = pos
     return Array(this.config.classes.length).fill(0)
       .map((_, i) => classesTensor.get(row, col, anchor, i))
-      .map((classScore, classLabel) => ({
+      .map((classScore, label) => ({
         classScore,
-        classLabel
+        label
       }))
       .reduce((max, curr) => max.classScore > curr.classScore ? max : curr)
   }

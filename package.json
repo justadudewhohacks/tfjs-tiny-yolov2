@@ -11,7 +11,8 @@
     "tsc": "tsc",
     "tsc-es6": "tsc --p tsconfig.es6.json",
     "build": "npm run rollup && npm run rollup-min && npm run tsc && npm run tsc-es6",
-    "test": "karma start"
+    "test": "karma start",
+    "test-travis": "set KARMA_BROWSERS=ChromeHeadlessNoSandbox&& karma start --single-run"
   },
   "keywords": [
     "tiny",

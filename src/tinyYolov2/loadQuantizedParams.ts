@@ -8,6 +8,7 @@ import {
 
 import { ConvParams } from '../common';
 import { loadSeparableConvParamsFactory } from '../common/extractSeparableConvParamsFactory';
+import { TinyYolov2Config } from './config';
 import { BatchNorm, ConvWithBatchNorm, NetParams } from './types';
 
 function extractorsFactory(weightMap: any, paramMappings: ParamMapping[]) {
@@ -44,7 +45,7 @@ function extractorsFactory(weightMap: any, paramMappings: ParamMapping[]) {
 
 export async function loadQuantizedParams(
   uri: string,
-  withSeparableConvs: boolean,
+  config: TinyYolov2Config,
   defaultModelName: string = ''
 ): Promise<{ params: NetParams, paramMappings: ParamMapping[] }> {
 
@@ -57,18 +58,33 @@ export async function loadQuantizedParams(
     extractSeparableConvParams
   } = extractorsFactory(weightMap, paramMappings)
 
-  const extractConvFn = withSeparableConvs ? extractSeparableConvParams : extractConvWithBatchNormParams
+  let params: NetParams
 
-  const params = {
-    conv0: extractConvFn('conv0'),
-    conv1: extractConvFn('conv1'),
-    conv2: extractConvFn('conv2'),
-    conv3: extractConvFn('conv3'),
-    conv4: extractConvFn('conv4'),
-    conv5: extractConvFn('conv5'),
-    conv6: extractConvFn('conv6'),
-    conv7: extractConvFn('conv7'),
-    conv8: extractConvParams('conv8')
+  if (config.withSeparableConvs) {
+    const numFilters = (config.filterSizes && config.filterSizes.length || 9)
+    params = {
+      conv0: config.isFirstLayerConv2d ? extractConvParams('conv0') : extractSeparableConvParams('conv0'),
+      conv1: extractSeparableConvParams('conv1'),
+      conv2: extractSeparableConvParams('conv2'),
+      conv3: extractSeparableConvParams('conv3'),
+      conv4: extractSeparableConvParams('conv4'),
+      conv5: extractSeparableConvParams('conv5'),
+      conv6: numFilters > 7 ? extractSeparableConvParams('conv6') : undefined,
+      conv7: numFilters > 8 ? extractSeparableConvParams('conv7') : undefined,
+      conv8: extractConvParams('conv8')
+    }
+  } else {
+    params = {
+      conv0: extractConvWithBatchNormParams('conv0'),
+      conv1: extractConvWithBatchNormParams('conv1'),
+      conv2: extractConvWithBatchNormParams('conv2'),
+      conv3: extractConvWithBatchNormParams('conv3'),
+      conv4: extractConvWithBatchNormParams('conv4'),
+      conv5: extractConvWithBatchNormParams('conv5'),
+      conv6: extractConvWithBatchNormParams('conv6'),
+      conv7: extractConvWithBatchNormParams('conv7'),
+      conv8: extractConvParams('conv8')
+    }
   }
 
   disposeUnusedWeightTensors(weightMap, paramMappings)

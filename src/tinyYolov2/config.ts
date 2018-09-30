@@ -8,6 +8,7 @@ export type TinyYolov2Config = {
   meanRgb?: [number, number, number]
   withClassScores?: boolean,
   filterSizes?: number[]
+  isFirstLayerConv2d?: boolean
 }
 
 export type TinyYolov2TrainableConfig = TinyYolov2Config & {

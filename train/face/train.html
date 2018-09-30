@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <script src="tiny-yolov2.js"></script>
+  <script src="commons.js"></script>
+  <script src="createLossReporter.js"></script>
+  <script src="randomCrop.js"></script>
+  <script src="FileSaver.js"></script>
+</head>
+<body>
+
+  <script>
+    tf = yolo.tf
+
+    // uri to weights file of last checkpoint
+    const modelCheckpoint = '/tmp/new_bboxes_e5.weights'
+
+    // continue training at epoch
+    const startEpoch = 5
+
+    // optimizer used for loss minimization (I found adam with default parameters to work out)
+    const learningRate = 0.0001 // 0.001
+    window.optimizer = tf.train.adam(learningRate, 0.9, 0.999, 1e-8)
+
+    // ignore boxes if min dimension is smaller than 'minBoxSize'
+    window.minBoxSize = 32
+
+    // save weights every 'saveEveryNthSample' images
+    window.saveEveryNthSample = 500
+
+    // image sizes at which each image is backward passed
+    window.trainSizes = [96, 128, 160, 224, 320, 416]
+
+    // finish training after 'maxEpoch' epochs
+    window.maxEpoch = Infinity
+
+    const lossReporter = createLossReporter(trainSizes)
+
+    const log = (str, ...args) => console.log(`[${[(new Date()).toTimeString().substr(0, 8)]}] ${str || ''}`, ...args)
+
+    function saveWeights(net, filename = 'train_tmp') {
+      saveAs(new Blob([net.serializeParams()]), filename)
+    }
+
+    async function loadNetWeights(uri) {
+      return new Float32Array(await (await fetch(uri)).arrayBuffer())
+    }
+
+    async function load() {
+      window.trainIds = (await fetch('/train_ids').then(res => res.json()))
+      window.config = await fetchJson(`/tmp/face_detector_model_config.json`)
+      window.net = new yolo.TinyYolov2Trainable(window.config, window.optimizer)
+
+      const weights = await loadNetWeights(modelCheckpoint)
+      await window.net.load(weights)
+    }
+
+    async function train() {
+      await load()
+
+      for (let epoch = startEpoch; epoch < window.maxEpoch; epoch++) {
+
+        if (epoch !== startEpoch) {
+          saveWeights(window.net, `new_bboxes_e${epoch}.weights`)
+          saveAs(new Blob([JSON.stringify(lossReporter.summary())]), `new_bboxes_e${epoch}.json`)
+        }
+        lossReporter.resetLosses()
+
+        const shuffledInputs = yolo.shuffleArray(window.trainIds)
+
+        for (let dataIdx = 0; dataIdx < shuffledInputs.length; dataIdx++) {
+
+          const trainId = shuffledInputs[dataIdx]
+
+          // fetch image and ground truth bounding boxes
+          const img = await yolo.bufferToImage(await fetchImage(trainId + '.jpg'))
+          const groundTruth = (await fetchJson(trainId + '.json'))
+            .map(({ x, y, width, height }) => ({
+              x: Math.max(0, x),
+              y: Math.max(0, y),
+              width: Math.min(1.0 -  Math.max(0, x), width),
+              height: Math.min(1.0 - Math.max(0, y), height),
+              label: 0
+            }))
+
+          for (let sizeIdx = 0; sizeIdx < window.trainSizes.length; sizeIdx++) {
+
+            const inputSize = window.trainSizes[sizeIdx]
+
+            const backwardOptions = {
+              minBoxSize: window.minBoxSize,
+              reportLosses: function({ losses, numBoxes, inputSize }) {
+                log(`ground truth boxes: ${numBoxes} (${inputSize})`)
+                log(`noObjectLoss[${dataIdx}]: ${yolo.round(losses.noObjectLoss, 4)}`)
+                log(`objectLoss[${dataIdx}]: ${yolo.round(losses.objectLoss, 4)}`)
+                log(`coordLoss[${dataIdx}]: ${yolo.round(losses.coordLoss, 4)}`)
+                log(`classLoss[${dataIdx}]: ${yolo.round(losses.classLoss, 4)}`)
+                log(`totalLoss[${dataIdx}]: ${yolo.round(losses.totalLoss, 4)}`)
+                lossReporter.reportLosses({ losses, numBoxes, inputSize })
+              }
+            }
+
+            const ts = Date.now()
+            try {
+              const loss = await net.backward(img, groundTruth, inputSize, backwardOptions)
+
+              if (!loss) {
+                log(`no boxes for input size ${inputSize}, ${groundTruth.length} boxes were too small`)
+                continue
+              }
+
+              loss.dispose()
+              log(`trainStep time for epoch ${epoch}, dataIdx ${dataIdx} (${inputSize}): ${Date.now() - ts} ms`)
+
+              await tf.nextFrame()
+            } catch (err) {
+              console.error(err)
+            }
+          }
+        }
+      }
+    }
+
+  </script>
+</body>
+</html>

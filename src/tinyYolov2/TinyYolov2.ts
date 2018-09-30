@@ -13,13 +13,16 @@ import {
 } from 'tfjs-image-recognition-base';
 
 import { convLayer } from '../common';
+import { ConvParams } from '../common/types';
 import { TinyYolov2Config, validateConfig } from './config';
 import { DEFAULT_FILTER_SIZES, INPUT_SIZES } from './const';
 import { convWithBatchNorm } from './convWithBatchNorm';
+import { depthwiseSeparableConv } from './depthwiseSeparableConv';
 import { extractParams } from './extractParams';
 import { getDefaultForwardParams } from './getDefaults';
+import { leaky } from './leaky';
 import { loadQuantizedParams } from './loadQuantizedParams';
-import { NetParams, TinyYolov2ForwardParams } from './types';
+import { MobilenetParams, NetParams, SeparableConvParams, TinyYolov2ForwardParams, TinyYolov2NetParams } from './types';
 
 export class TinyYolov2 extends NeuralNetwork<NetParams> {
 
@@ -43,6 +46,48 @@ export class TinyYolov2 extends NeuralNetwork<NetParams> {
     return 5 + (this.withClassScores ? this.config.classes.length : 0)
   }
 
+  public runTinyYolov2(x: tf.Tensor4D, params: TinyYolov2NetParams): tf.Tensor4D {
+
+    let out = convWithBatchNorm(x, params.conv0)
+    out = tf.maxPool(out, [2, 2], [2, 2], 'same')
+    out = convWithBatchNorm(out, params.conv1)
+    out = tf.maxPool(out, [2, 2], [2, 2], 'same')
+    out = convWithBatchNorm(out, params.conv2)
+    out = tf.maxPool(out, [2, 2], [2, 2], 'same')
+    out = convWithBatchNorm(out, params.conv3)
+    out = tf.maxPool(out, [2, 2], [2, 2], 'same')
+    out = convWithBatchNorm(out, params.conv4)
+    out = tf.maxPool(out, [2, 2], [2, 2], 'same')
+    out = convWithBatchNorm(out, params.conv5)
+    out = tf.maxPool(out, [2, 2], [1, 1], 'same')
+    out = convWithBatchNorm(out, params.conv6)
+    out = convWithBatchNorm(out, params.conv7)
+
+    return convLayer(out, params.conv8, 'valid', false)
+  }
+
+  public runMobilenet(x: tf.Tensor4D, params: MobilenetParams): tf.Tensor4D {
+
+    let out = this.config.isFirstLayerConv2d
+      ? leaky(convLayer(x, params.conv0 as ConvParams, 'valid', false))
+      : depthwiseSeparableConv(x, params.conv0 as SeparableConvParams)
+    out = tf.maxPool(out, [2, 2], [2, 2], 'same')
+    out = depthwiseSeparableConv(out, params.conv1)
+    out = tf.maxPool(out, [2, 2], [2, 2], 'same')
+    out = depthwiseSeparableConv(out, params.conv2)
+    out = tf.maxPool(out, [2, 2], [2, 2], 'same')
+    out = depthwiseSeparableConv(out, params.conv3)
+    out = tf.maxPool(out, [2, 2], [2, 2], 'same')
+    out = depthwiseSeparableConv(out, params.conv4)
+    out = tf.maxPool(out, [2, 2], [2, 2], 'same')
+    out = depthwiseSeparableConv(out, params.conv5)
+    out = tf.maxPool(out, [2, 2], [1, 1], 'same')
+    out = params.conv6 ? depthwiseSeparableConv(out, params.conv6) : out
+    out = params.conv7 ? depthwiseSeparableConv(out, params.conv7) : out
+
+    return convLayer(out, params.conv8, 'valid', false)
+  }
+
   public forwardInput(input: NetInput, inputSize: number): tf.Tensor4D {
 
     const { params } = this
@@ -51,7 +96,7 @@ export class TinyYolov2 extends NeuralNetwork<NetParams> {
       throw new Error('TinyYolov2 - load model before inference')
     }
 
-    const out = tf.tidy(() => {
+    return tf.tidy(() => {
 
       let batchTensor = input.toBatchTensor(inputSize, false).toFloat()
       batchTensor = this.config.meanRgb
@@ -59,26 +104,10 @@ export class TinyYolov2 extends NeuralNetwork<NetParams> {
         : batchTensor
       batchTensor = batchTensor.div(tf.scalar(256)) as tf.Tensor4D
 
-      let out = convWithBatchNorm(batchTensor, params.conv0)
-      out = tf.maxPool(out, [2, 2], [2, 2], 'same')
-      out = convWithBatchNorm(out, params.conv1)
-      out = tf.maxPool(out, [2, 2], [2, 2], 'same')
-      out = convWithBatchNorm(out, params.conv2)
-      out = tf.maxPool(out, [2, 2], [2, 2], 'same')
-      out = convWithBatchNorm(out, params.conv3)
-      out = tf.maxPool(out, [2, 2], [2, 2], 'same')
-      out = convWithBatchNorm(out, params.conv4)
-      out = tf.maxPool(out, [2, 2], [2, 2], 'same')
-      out = convWithBatchNorm(out, params.conv5)
-      out = tf.maxPool(out, [2, 2], [1, 1], 'same')
-      out = convWithBatchNorm(out, params.conv6)
-      out = convWithBatchNorm(out, params.conv7)
-      out = convLayer(out, params.conv8, 'valid', false)
-
-      return out
+      return this.config.withSeparableConvs
+        ? this.runMobilenet(batchTensor, params as MobilenetParams)
+        : this.runTinyYolov2(batchTensor, params as TinyYolov2NetParams)
     })
-
-    return out
   }
 
   public async forward(input: TNetInput, inputSize: number): Promise<tf.Tensor4D> {
@@ -140,17 +169,17 @@ export class TinyYolov2 extends NeuralNetwork<NetParams> {
       throw new Error('loadQuantizedParams - please specify the modelUri')
     }
 
-    return loadQuantizedParams(modelUri, this.config.withSeparableConvs, defaultModelName)
+    return loadQuantizedParams(modelUri, this.config, defaultModelName)
   }
 
   protected extractParams(weights: Float32Array) {
     const filterSizes = this.config.filterSizes || DEFAULT_FILTER_SIZES
 
     const numFilters = filterSizes ? filterSizes.length : undefined
-    if (numFilters !== 9) {
-      throw new Error(`TinyYolov2 - expected 9 convolutional filters, but found ${numFilters} filterSizes in config`)
+    if (numFilters !== 7 && numFilters !== 8 && numFilters !== 9) {
+      throw new Error(`TinyYolov2 - expected 7 | 8 | 9 convolutional filters, but found ${numFilters} filterSizes in config`)
     }
-    return extractParams(weights, this.config.withSeparableConvs, this.boxEncodingSize, filterSizes)
+    return extractParams(weights, this.config, this.boxEncodingSize, filterSizes)
   }
 
   protected extractBoxes(

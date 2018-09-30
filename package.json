@@ -1,6 +1,6 @@
 {
   "name": "tfjs-tiny-yolov2",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Tiny YOLO v2 object detection with tensorflow.js.",
   "module": "./build/es6/index.js",
   "main": "./build/commonjs/index.js",
@@ -11,7 +11,8 @@
     "tsc": "tsc",
     "tsc-es6": "tsc --p tsconfig.es6.json",
     "build": "npm run rollup && npm run rollup-min && npm run tsc && npm run tsc-es6",
-    "test": "karma start"
+    "test": "karma start",
+    "test-travis": "set KARMA_BROWSERS=ChromeHeadlessNoSandbox&& karma start --single-run"
   },
   "keywords": [
     "tiny",

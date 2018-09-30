@@ -1,5 +1,7 @@
 # tfjs-tiny-yolov2
 
+[![Build Status](https://travis-ci.org/justadudewhohacks/tfjs-tiny-yolov2.svg?branch=master)](https://travis-ci.org/justadudewhohacks/tfjs-tiny-yolov2)
+
 **JavaScript object detection in the browser based on a tensorflow.js implementation of tiny yolov2.**
 
 Table of Contents:

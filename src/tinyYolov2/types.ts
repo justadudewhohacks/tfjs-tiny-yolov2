@@ -2,18 +2,11 @@ import * as tf from '@tensorflow/tfjs-core';
 import { Box, IRect } from 'tfjs-image-recognition-base';
 
 import { ConvParams } from '../common';
+import { SeparableConvParams } from '../common/types';
 
 export type BatchNorm = {
   sub: tf.Tensor1D
   truediv: tf.Tensor1D
-}
-
-export class SeparableConvParams {
-  constructor(
-    public depthwise_filter: tf.Tensor4D,
-    public pointwise_filter: tf.Tensor4D,
-    public bias: tf.Tensor1D
-  ) {}
 }
 
 export type ConvWithBatchNorm = {

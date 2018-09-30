@@ -12,12 +12,15 @@ export default {
     typescript({
       tsconfigOverride: {
         compilerOptions: {
+          module: 'ES2015',
           declaration: false
         }
       }
     }),
     node(),
-    commonjs()
+    commonjs({
+      include: 'node_modules/**'
+    })
   ].concat(minify ? uglify() : []),
   output: {
     extend: true,

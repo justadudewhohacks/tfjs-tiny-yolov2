@@ -14,10 +14,10 @@
     "suppressImplicitAnyIndexErrors": true,
     "strictNullChecks": true,
     "importHelpers": true,
-    "module": "es6",
-    "moduleResolution": "node",
+    "outDir": "build/commonjs",
+    "module": "commonjs",
     "target": "es5",
-    "outDir": "build",
+    "moduleResolution": "node",
     "lib": ["es2015", "dom"],
     "typeRoots": [
       "typings",

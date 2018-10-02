@@ -13,7 +13,7 @@ import {
 } from 'tfjs-image-recognition-base';
 
 import { convLayer } from '../common';
-import { ConvParams } from '../common/types';
+import { ConvParams, SeparableConvParams } from '../common/types';
 import { TinyYolov2Config, validateConfig } from './config';
 import { DEFAULT_FILTER_SIZES, INPUT_SIZES } from './const';
 import { convWithBatchNorm } from './convWithBatchNorm';
@@ -22,7 +22,7 @@ import { extractParams } from './extractParams';
 import { getDefaultForwardParams } from './getDefaults';
 import { leaky } from './leaky';
 import { loadQuantizedParams } from './loadQuantizedParams';
-import { MobilenetParams, NetParams, SeparableConvParams, TinyYolov2ForwardParams, TinyYolov2NetParams } from './types';
+import { MobilenetParams, NetParams, TinyYolov2ForwardParams, TinyYolov2NetParams } from './types';
 
 export class TinyYolov2 extends NeuralNetwork<NetParams> {
 

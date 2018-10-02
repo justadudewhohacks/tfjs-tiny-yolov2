@@ -1,6 +1,5 @@
 import * as tf from '@tensorflow/tfjs-core';
 
-import { SeparableConvParams } from '../common/types';
 import { leaky } from './leaky';
 import { ConvWithBatchNorm } from './types';
 

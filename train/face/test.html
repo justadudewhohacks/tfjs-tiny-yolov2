@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <script src="tiny-yolov2.js"></script>
+  <script src="commons.js"></script>
+  <script src="FileSaver.js"></script>
+</head>
+
+  <script>
+    const configUrl = `tmp/face_detector_model_config.json`
+    const checkpointName = 'new_bboxes_e25_compressed'
+    const checkpointUrl = `tmp/${checkpointName}.weights`
+
+    const forwardParams = {
+      inputSize: 416,
+      scoreThreshold: 0.5
+    }
+
+    window.results = {}
+
+    async function test() {
+      const config = await fetchJson(configUrl)
+      net = new yolo.TinyYolov2(config)
+      //await net.load(await loadNetWeights(checkpointUrl))
+      await net.load('/tiny_face_detection_model-weights_manifest.json')
+
+      const groundTruths = await fetch('test_ground_truth.json').then(res => res.json())
+
+      for ([idx, { imgFile }] of groundTruths.entries()) {
+
+        console.log(idx / groundTruths.length)
+
+        const img = await yolo.bufferToImage(await fetchImage(`test_images/${imgFile}`))
+        const detections = (await net.detect(img, forwardParams))
+          .map(({ score, relativeBox: { x, y, width, height } }) => ({ score, x, y, width, height }))
+
+        window.results[imgFile] = detections
+
+      }
+
+      saveAs(new Blob([JSON.stringify(window.results)]), `test_${checkpointName}.json`)
+    }
+
+  </script>
+</body>
+</html>

@@ -13,10 +13,10 @@
     tf = yolo.tf
 
     // uri to weights file of last checkpoint
-    const modelCheckpoint = '/tmp/new_bboxes_e5.weights'
+    const modelCheckpoint = '/tmp/new_bboxes_e24.weights'
 
     // continue training at epoch
-    const startEpoch = 5
+    const startEpoch = 24
 
     // optimizer used for loss minimization (I found adam with default parameters to work out)
     const learningRate = 0.0001 // 0.001
@@ -26,7 +26,7 @@
     window.minBoxSize = 32
 
     // save weights every 'saveEveryNthSample' images
-    window.saveEveryNthSample = 500
+    window.saveEveryNthSample = 1000
 
     // image sizes at which each image is backward passed
     window.trainSizes = [96, 128, 160, 224, 320, 416]
@@ -34,7 +34,6 @@
     // finish training after 'maxEpoch' epochs
     window.maxEpoch = Infinity
 
-    const lossReporter = createLossReporter(trainSizes)
 
     const log = (str, ...args) => console.log(`[${[(new Date()).toTimeString().substr(0, 8)]}] ${str || ''}`, ...args)
 
@@ -60,15 +59,25 @@
 
       for (let epoch = startEpoch; epoch < window.maxEpoch; epoch++) {
 
+
         if (epoch !== startEpoch) {
           saveWeights(window.net, `new_bboxes_e${epoch}.weights`)
-          saveAs(new Blob([JSON.stringify(lossReporter.summary())]), `new_bboxes_e${epoch}.json`)
+
+          const currentLossReporter = window.lossReporter
+          setTimeout(() => {
+            saveAs(new Blob([JSON.stringify(currentLossReporter.summary(true))]), `new_bboxes_e${epoch}.json`)
+          }, 10000)
         }
-        lossReporter.resetLosses()
+        window.lossReporter = createLossReporter(trainSizes)
 
         const shuffledInputs = yolo.shuffleArray(window.trainIds)
 
         for (let dataIdx = 0; dataIdx < shuffledInputs.length; dataIdx++) {
+
+          if (dataIdx !== 0 && (dataIdx % saveEveryNthSample) === 0) {
+            saveWeights(window.net, `new_bboxes_e${epoch}_i${dataIdx}.weights`)
+            saveAs(new Blob([JSON.stringify(lossReporter.summary(true))]), `new_bboxes_e${epoch}_i${dataIdx}.json`)
+          }
 
           const trainId = shuffledInputs[dataIdx]
 
@@ -88,16 +97,10 @@
             const inputSize = window.trainSizes[sizeIdx]
 
             const backwardOptions = {
-              minBoxSize: window.minBoxSize,
-              reportLosses: function({ losses, numBoxes, inputSize }) {
-                log(`ground truth boxes: ${numBoxes} (${inputSize})`)
-                log(`noObjectLoss[${dataIdx}]: ${yolo.round(losses.noObjectLoss, 4)}`)
-                log(`objectLoss[${dataIdx}]: ${yolo.round(losses.objectLoss, 4)}`)
-                log(`coordLoss[${dataIdx}]: ${yolo.round(losses.coordLoss, 4)}`)
-                log(`classLoss[${dataIdx}]: ${yolo.round(losses.classLoss, 4)}`)
-                log(`totalLoss[${dataIdx}]: ${yolo.round(losses.totalLoss, 4)}`)
-                lossReporter.reportLosses({ losses, numBoxes, inputSize })
-              }
+              minBoxSize: window.minBoxSize
+            }
+
+            function reportLosses(losses) {
             }
 
             const ts = Date.now()
@@ -109,10 +112,21 @@
                 continue
               }
 
-              loss.dispose()
+              loss.data().then(data => {
+                const lossValue = data[0]
+                log(`totalLoss[${dataIdx}]: ${yolo.round(lossValue, 4)}`)
+                lossReporter.reportLosses({ losses: { totalLoss: lossValue }, numBoxes: '-', inputSize })
+                loss.dispose()
+              })
+
+
               log(`trainStep time for epoch ${epoch}, dataIdx ${dataIdx} (${inputSize}): ${Date.now() - ts} ms`)
 
-              await tf.nextFrame()
+              if (window.iterDelay) {
+                await (new Promise(res => setTimeout(res, window.iterDelay)))
+              } else {
+                await tf.nextFrame()
+              }
             } catch (err) {
               console.error(err)
             }

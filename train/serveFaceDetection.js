@@ -20,6 +20,7 @@ app.use(express.static(path.join(__dirname, './node_modules/file-saver')))
 app.get('/', (req, res) => res.redirect('/train'))
 app.get('/train', (req, res) => res.sendFile(path.join(public, 'train.html')))
 app.get('/verify', (req, res) => res.sendFile(path.join(public, 'verify.html')))
+app.get('/test', (req, res) => res.sendFile(path.join(public, 'test.html')))
 
 const trainDataPath = path.resolve(process.env.TRAIN_DATA_PATH)
 const testDataPath = path.resolve(process.env.TEST_DATA_PATH)
@@ -30,9 +31,9 @@ app.use(express.static(groundTruthPath))
 app.use(express.static(testDataPath))
 
 const trainIds = fs.readdirSync(groundTruthPath).map(gt => gt.replace('.json', ''))
-const testIds = fs.readdirSync(path.join(testDataPath, 'test_ground_truth')).map(gt => gt.replace('.json', ''))
+//const testIds = fs.readdirSync(path.join(testDataPath, 'test_ground_truth.json')).map(gt => gt.replace('.json', ''))
 
 app.get('/train_ids', (req, res) => res.status(202).send(trainIds))
-app.get('/test_ids', (req, res) => res.status(202).send(testIds))
+//app.get('/test_ids', (req, res) => res.status(202).send(testIds))
 
 app.listen(8000, () => console.log('Listening on port 8000!'))

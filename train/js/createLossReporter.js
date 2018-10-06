@@ -18,7 +18,7 @@ function createLossReporter(trainSizes) {
     })
   }
 
-  function reportLosses({ losses, numBoxes, inputSize }) {
+  function reportLosses({ losses, inputSize }) {
     totalLosses[inputSize] += losses.totalLoss
     noObjectLosses[inputSize] += losses.noObjectLoss
     objectLosses[inputSize] += losses.objectLoss
@@ -27,18 +27,23 @@ function createLossReporter(trainSizes) {
     counters[inputSize] += 1
   }
 
-  function summary() {
+  function summary(reportTotalLossOnly = false) {
     const avgLosses = {}
 
     trainSizes.forEach(size => {
-      avgLosses[size] = {
-        count: counters[size],
-        totalLoss: totalLosses[size] / counters[size],
-        noObjectLoss: noObjectLosses[size] / counters[size],
-        objectLoss: objectLosses[size] / counters[size],
-        classLoss: classLosses[size] / counters[size],
-        coordLoss: coordLosses[size] / counters[size]
-      }
+      avgLosses[size] = Object.assign(
+        {},
+        {
+          count: counters[size],
+          totalLoss: totalLosses[size] / counters[size]
+        },
+        reportTotalLossOnly ? {} : {
+          noObjectLoss: noObjectLosses[size] / counters[size],
+          objectLoss: objectLosses[size] / counters[size],
+          classLoss: classLosses[size] / counters[size],
+          coordLoss: coordLosses[size] / counters[size]
+        }
+      )
     })
 
     return avgLosses

@@ -10,17 +10,29 @@ export declare type ConvWithBatchNorm = {
     conv: ConvParams;
     bn: BatchNorm;
 };
-export declare type NetParams = {
-    conv0: ConvWithBatchNorm | SeparableConvParams;
-    conv1: ConvWithBatchNorm | SeparableConvParams;
-    conv2: ConvWithBatchNorm | SeparableConvParams;
-    conv3: ConvWithBatchNorm | SeparableConvParams;
-    conv4: ConvWithBatchNorm | SeparableConvParams;
-    conv5: ConvWithBatchNorm | SeparableConvParams;
-    conv6: ConvWithBatchNorm | SeparableConvParams;
-    conv7: ConvWithBatchNorm | SeparableConvParams;
+export declare type MobilenetParams = {
+    conv0: SeparableConvParams | ConvParams;
+    conv1: SeparableConvParams;
+    conv2: SeparableConvParams;
+    conv3: SeparableConvParams;
+    conv4: SeparableConvParams;
+    conv5: SeparableConvParams;
+    conv6?: SeparableConvParams;
+    conv7?: SeparableConvParams;
     conv8: ConvParams;
 };
+export declare type TinyYolov2NetParams = {
+    conv0: ConvWithBatchNorm;
+    conv1: ConvWithBatchNorm;
+    conv2: ConvWithBatchNorm;
+    conv3: ConvWithBatchNorm;
+    conv4: ConvWithBatchNorm;
+    conv5: ConvWithBatchNorm;
+    conv6: ConvWithBatchNorm;
+    conv7: ConvWithBatchNorm;
+    conv8: ConvParams;
+};
+export declare type NetParams = TinyYolov2NetParams | MobilenetParams;
 export declare enum SizeType {
     XS = "xs",
     SM = "sm",

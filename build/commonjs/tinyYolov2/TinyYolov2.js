@@ -7,8 +7,10 @@ var common_1 = require("../common");
 var config_1 = require("./config");
 var const_1 = require("./const");
 var convWithBatchNorm_1 = require("./convWithBatchNorm");
+var depthwiseSeparableConv_1 = require("./depthwiseSeparableConv");
 var extractParams_1 = require("./extractParams");
 var getDefaults_1 = require("./getDefaults");
+var leaky_1 = require("./leaky");
 var loadQuantizedParams_1 = require("./loadQuantizedParams");
 var TinyYolov2 = /** @class */ (function (_super) {
     tslib_1.__extends(TinyYolov2, _super);
@@ -39,36 +41,58 @@ var TinyYolov2 = /** @class */ (function (_super) {
         enumerable: true,
         configurable: true
     });
+    TinyYolov2.prototype.runTinyYolov2 = function (x, params) {
+        var out = convWithBatchNorm_1.convWithBatchNorm(x, params.conv0);
+        out = tf.maxPool(out, [2, 2], [2, 2], 'same');
+        out = convWithBatchNorm_1.convWithBatchNorm(out, params.conv1);
+        out = tf.maxPool(out, [2, 2], [2, 2], 'same');
+        out = convWithBatchNorm_1.convWithBatchNorm(out, params.conv2);
+        out = tf.maxPool(out, [2, 2], [2, 2], 'same');
+        out = convWithBatchNorm_1.convWithBatchNorm(out, params.conv3);
+        out = tf.maxPool(out, [2, 2], [2, 2], 'same');
+        out = convWithBatchNorm_1.convWithBatchNorm(out, params.conv4);
+        out = tf.maxPool(out, [2, 2], [2, 2], 'same');
+        out = convWithBatchNorm_1.convWithBatchNorm(out, params.conv5);
+        out = tf.maxPool(out, [2, 2], [1, 1], 'same');
+        out = convWithBatchNorm_1.convWithBatchNorm(out, params.conv6);
+        out = convWithBatchNorm_1.convWithBatchNorm(out, params.conv7);
+        return common_1.convLayer(out, params.conv8, 'valid', false);
+    };
+    TinyYolov2.prototype.runMobilenet = function (x, params) {
+        var out = this.config.isFirstLayerConv2d
+            ? leaky_1.leaky(common_1.convLayer(x, params.conv0, 'valid', false))
+            : depthwiseSeparableConv_1.depthwiseSeparableConv(x, params.conv0);
+        out = tf.maxPool(out, [2, 2], [2, 2], 'same');
+        out = depthwiseSeparableConv_1.depthwiseSeparableConv(out, params.conv1);
+        out = tf.maxPool(out, [2, 2], [2, 2], 'same');
+        out = depthwiseSeparableConv_1.depthwiseSeparableConv(out, params.conv2);
+        out = tf.maxPool(out, [2, 2], [2, 2], 'same');
+        out = depthwiseSeparableConv_1.depthwiseSeparableConv(out, params.conv3);
+        out = tf.maxPool(out, [2, 2], [2, 2], 'same');
+        out = depthwiseSeparableConv_1.depthwiseSeparableConv(out, params.conv4);
+        out = tf.maxPool(out, [2, 2], [2, 2], 'same');
+        out = depthwiseSeparableConv_1.depthwiseSeparableConv(out, params.conv5);
+        out = tf.maxPool(out, [2, 2], [1, 1], 'same');
+        out = params.conv6 ? depthwiseSeparableConv_1.depthwiseSeparableConv(out, params.conv6) : out;
+        out = params.conv7 ? depthwiseSeparableConv_1.depthwiseSeparableConv(out, params.conv7) : out;
+        return common_1.convLayer(out, params.conv8, 'valid', false);
+    };
     TinyYolov2.prototype.forwardInput = function (input, inputSize) {
         var _this = this;
         var params = this.params;
         if (!params) {
             throw new Error('TinyYolov2 - load model before inference');
         }
-        var out = tf.tidy(function () {
+        return tf.tidy(function () {
             var batchTensor = input.toBatchTensor(inputSize, false).toFloat();
             batchTensor = _this.config.meanRgb
                 ? tfjs_image_recognition_base_1.normalize(batchTensor, _this.config.meanRgb)
                 : batchTensor;
             batchTensor = batchTensor.div(tf.scalar(256));
-            var out = convWithBatchNorm_1.convWithBatchNorm(batchTensor, params.conv0);
-            out = tf.maxPool(out, [2, 2], [2, 2], 'same');
-            out = convWithBatchNorm_1.convWithBatchNorm(out, params.conv1);
-            out = tf.maxPool(out, [2, 2], [2, 2], 'same');
-            out = convWithBatchNorm_1.convWithBatchNorm(out, params.conv2);
-            out = tf.maxPool(out, [2, 2], [2, 2], 'same');
-            out = convWithBatchNorm_1.convWithBatchNorm(out, params.conv3);
-            out = tf.maxPool(out, [2, 2], [2, 2], 'same');
-            out = convWithBatchNorm_1.convWithBatchNorm(out, params.conv4);
-            out = tf.maxPool(out, [2, 2], [2, 2], 'same');
-            out = convWithBatchNorm_1.convWithBatchNorm(out, params.conv5);
-            out = tf.maxPool(out, [2, 2], [1, 1], 'same');
-            out = convWithBatchNorm_1.convWithBatchNorm(out, params.conv6);
-            out = convWithBatchNorm_1.convWithBatchNorm(out, params.conv7);
-            out = common_1.convLayer(out, params.conv8, 'valid', false);
-            return out;
+            return _this.config.withSeparableConvs
+                ? _this.runMobilenet(batchTensor, params)
+                : _this.runTinyYolov2(batchTensor, params);
         });
-        return out;
     };
     TinyYolov2.prototype.forward = function (input, inputSize) {
         return tslib_1.__awaiter(this, void 0, void 0, function () {
@@ -131,15 +155,15 @@ var TinyYolov2 = /** @class */ (function (_super) {
         if (!modelUri) {
             throw new Error('loadQuantizedParams - please specify the modelUri');
         }
-        return loadQuantizedParams_1.loadQuantizedParams(modelUri, this.config.withSeparableConvs, defaultModelName);
+        return loadQuantizedParams_1.loadQuantizedParams(modelUri, this.config, defaultModelName);
     };
     TinyYolov2.prototype.extractParams = function (weights) {
         var filterSizes = this.config.filterSizes || const_1.DEFAULT_FILTER_SIZES;
         var numFilters = filterSizes ? filterSizes.length : undefined;
-        if (numFilters !== 9) {
-            throw new Error("TinyYolov2 - expected 9 convolutional filters, but found " + numFilters + " filterSizes in config");
+        if (numFilters !== 7 && numFilters !== 8 && numFilters !== 9) {
+            throw new Error("TinyYolov2 - expected 7 | 8 | 9 convolutional filters, but found " + numFilters + " filterSizes in config");
         }
-        return extractParams_1.extractParams(weights, this.config.withSeparableConvs, this.boxEncodingSize, filterSizes);
+        return extractParams_1.extractParams(weights, this.config, this.boxEncodingSize, filterSizes);
     };
     TinyYolov2.prototype.extractBoxes = function (outputTensor, inputBlobDimensions, scoreThreshold) {
         var _this = this;

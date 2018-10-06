@@ -1539,16 +1539,19 @@
     function convWithBatchNorm(x, params) {
         return tidy(function () {
             var out = pad(x, [[0, 0], [1, 1], [1, 1], [0, 0]]);
-            if (params instanceof SeparableConvParams) {
-                out = separableConv2d(out, params.depthwise_filter, params.pointwise_filter, [1, 1], 'valid');
-                out = add(out, params.bias);
-            }
-            else {
-                out = conv2d(out, params.conv.filters, [1, 1], 'valid');
-                out = sub(out, params.bn.sub);
-                out = mul(out, params.bn.truediv);
-                out = add(out, params.conv.bias);
-            }
+            out = conv2d(out, params.conv.filters, [1, 1], 'valid');
+            out = sub(out, params.bn.sub);
+            out = mul(out, params.bn.truediv);
+            out = add(out, params.conv.bias);
+            return leaky(out);
+        });
+    }
+
+    function depthwiseSeparableConv(x, params) {
+        return tidy(function () {
+            var out = pad(x, [[0, 0], [1, 1], [1, 1], [0, 0]]);
+            out = separableConv2d(out, params.depthwise_filter, params.pointwise_filter, [1, 1], 'valid');
+            out = add(out, params.bias);
             return leaky(out);
         });
     }
@@ -1573,25 +1576,42 @@
             extractSeparableConvParams: extractSeparableConvParams
         };
     }
-    function extractParams(weights, withSeparableConvs, boxEncodingSize, filterSizes) {
+    function extractParams(weights, config, boxEncodingSize, filterSizes) {
         var _a = extractWeightsFactory(weights), extractWeights = _a.extractWeights, getRemainingWeights = _a.getRemainingWeights;
         var paramMappings = [];
         var _b = extractorsFactory(extractWeights, paramMappings), extractConvParams = _b.extractConvParams, extractConvWithBatchNormParams = _b.extractConvWithBatchNormParams, extractSeparableConvParams = _b.extractSeparableConvParams;
-        var extractConvFn = withSeparableConvs ? extractSeparableConvParams : extractConvWithBatchNormParams;
-        var s0 = filterSizes[0], s1 = filterSizes[1], s2 = filterSizes[2], s3 = filterSizes[3], s4 = filterSizes[4], s5 = filterSizes[5], s6 = filterSizes[6], s7 = filterSizes[7], s8 = filterSizes[8];
-        var conv0 = extractConvFn(s0, s1, 'conv0');
-        var conv1 = extractConvFn(s1, s2, 'conv1');
-        var conv2 = extractConvFn(s2, s3, 'conv2');
-        var conv3 = extractConvFn(s3, s4, 'conv3');
-        var conv4 = extractConvFn(s4, s5, 'conv4');
-        var conv5 = extractConvFn(s5, s6, 'conv5');
-        var conv6 = extractConvFn(s6, s7, 'conv6');
-        var conv7 = extractConvFn(s7, s8, 'conv7');
-        var conv8 = extractConvParams(s8, 5 * boxEncodingSize, 1, 'conv8');
+        var params;
+        if (config.withSeparableConvs) {
+            var s0 = filterSizes[0], s1 = filterSizes[1], s2 = filterSizes[2], s3 = filterSizes[3], s4 = filterSizes[4], s5 = filterSizes[5], s6 = filterSizes[6], s7 = filterSizes[7], s8 = filterSizes[8];
+            var conv0 = config.isFirstLayerConv2d
+                ? extractConvParams(s0, s1, 3, 'conv0')
+                : extractSeparableConvParams(s0, s1, 'conv0');
+            var conv1 = extractSeparableConvParams(s1, s2, 'conv1');
+            var conv2 = extractSeparableConvParams(s2, s3, 'conv2');
+            var conv3 = extractSeparableConvParams(s3, s4, 'conv3');
+            var conv4 = extractSeparableConvParams(s4, s5, 'conv4');
+            var conv5 = extractSeparableConvParams(s5, s6, 'conv5');
+            var conv6 = s7 ? extractSeparableConvParams(s6, s7, 'conv6') : undefined;
+            var conv7 = s8 ? extractSeparableConvParams(s7, s8, 'conv7') : undefined;
+            var conv8 = extractConvParams(s8 || s7 || s6, 5 * boxEncodingSize, 1, 'conv8');
+            params = { conv0: conv0, conv1: conv1, conv2: conv2, conv3: conv3, conv4: conv4, conv5: conv5, conv6: conv6, conv7: conv7, conv8: conv8 };
+        }
+        else {
+            var s0 = filterSizes[0], s1 = filterSizes[1], s2 = filterSizes[2], s3 = filterSizes[3], s4 = filterSizes[4], s5 = filterSizes[5], s6 = filterSizes[6], s7 = filterSizes[7], s8 = filterSizes[8];
+            var conv0 = extractConvWithBatchNormParams(s0, s1, 'conv0');
+            var conv1 = extractConvWithBatchNormParams(s1, s2, 'conv1');
+            var conv2 = extractConvWithBatchNormParams(s2, s3, 'conv2');
+            var conv3 = extractConvWithBatchNormParams(s3, s4, 'conv3');
+            var conv4 = extractConvWithBatchNormParams(s4, s5, 'conv4');
+            var conv5 = extractConvWithBatchNormParams(s5, s6, 'conv5');
+            var conv6 = extractConvWithBatchNormParams(s6, s7, 'conv6');
+            var conv7 = extractConvWithBatchNormParams(s7, s8, 'conv7');
+            var conv8 = extractConvParams(s8, 5 * boxEncodingSize, 1, 'conv8');
+            params = { conv0: conv0, conv1: conv1, conv2: conv2, conv3: conv3, conv4: conv4, conv5: conv5, conv6: conv6, conv7: conv7, conv8: conv8 };
+        }
         if (getRemainingWeights().length !== 0) {
             throw new Error("weights remaing after extract: " + getRemainingWeights().length);
         }
-        var params = { conv0: conv0, conv1: conv1, conv2: conv2, conv3: conv3, conv4: conv4, conv5: conv5, conv6: conv6, conv7: conv7, conv8: conv8 };
         return { params: params, paramMappings: paramMappings };
     }
 
@@ -1631,10 +1651,10 @@
             extractSeparableConvParams: extractSeparableConvParams
         };
     }
-    function loadQuantizedParams(uri, withSeparableConvs, defaultModelName) {
+    function loadQuantizedParams(uri, config, defaultModelName) {
         if (defaultModelName === void 0) { defaultModelName = ''; }
         return __awaiter$1(this, void 0, void 0, function () {
-            var weightMap, paramMappings, _a, extractConvParams, extractConvWithBatchNormParams, extractSeparableConvParams, extractConvFn, params;
+            var weightMap, paramMappings, _a, extractConvParams, extractConvWithBatchNormParams, extractSeparableConvParams, params, numFilters;
             return __generator$1(this, function (_b) {
                 switch (_b.label) {
                     case 0: return [4 /*yield*/, loadWeightMap(uri, defaultModelName)];
@@ -1642,18 +1662,33 @@
                         weightMap = _b.sent();
                         paramMappings = [];
                         _a = extractorsFactory$1(weightMap, paramMappings), extractConvParams = _a.extractConvParams, extractConvWithBatchNormParams = _a.extractConvWithBatchNormParams, extractSeparableConvParams = _a.extractSeparableConvParams;
-                        extractConvFn = withSeparableConvs ? extractSeparableConvParams : extractConvWithBatchNormParams;
-                        params = {
-                            conv0: extractConvFn('conv0'),
-                            conv1: extractConvFn('conv1'),
-                            conv2: extractConvFn('conv2'),
-                            conv3: extractConvFn('conv3'),
-                            conv4: extractConvFn('conv4'),
-                            conv5: extractConvFn('conv5'),
-                            conv6: extractConvFn('conv6'),
-                            conv7: extractConvFn('conv7'),
-                            conv8: extractConvParams('conv8')
-                        };
+                        if (config.withSeparableConvs) {
+                            numFilters = (config.filterSizes && config.filterSizes.length || 9);
+                            params = {
+                                conv0: config.isFirstLayerConv2d ? extractConvParams('conv0') : extractSeparableConvParams('conv0'),
+                                conv1: extractSeparableConvParams('conv1'),
+                                conv2: extractSeparableConvParams('conv2'),
+                                conv3: extractSeparableConvParams('conv3'),
+                                conv4: extractSeparableConvParams('conv4'),
+                                conv5: extractSeparableConvParams('conv5'),
+                                conv6: numFilters > 7 ? extractSeparableConvParams('conv6') : undefined,
+                                conv7: numFilters > 8 ? extractSeparableConvParams('conv7') : undefined,
+                                conv8: extractConvParams('conv8')
+                            };
+                        }
+                        else {
+                            params = {
+                                conv0: extractConvWithBatchNormParams('conv0'),
+                                conv1: extractConvWithBatchNormParams('conv1'),
+                                conv2: extractConvWithBatchNormParams('conv2'),
+                                conv3: extractConvWithBatchNormParams('conv3'),
+                                conv4: extractConvWithBatchNormParams('conv4'),
+                                conv5: extractConvWithBatchNormParams('conv5'),
+                                conv6: extractConvWithBatchNormParams('conv6'),
+                                conv7: extractConvWithBatchNormParams('conv7'),
+                                conv8: extractConvParams('conv8')
+                            };
+                        }
                         disposeUnusedWeightTensors(weightMap, paramMappings);
                         return [2 /*return*/, { params: params, paramMappings: paramMappings }];
                 }
@@ -1690,36 +1725,58 @@
             enumerable: true,
             configurable: true
         });
+        TinyYolov2.prototype.runTinyYolov2 = function (x, params) {
+            var out = convWithBatchNorm(x, params.conv0);
+            out = maxPool(out, [2, 2], [2, 2], 'same');
+            out = convWithBatchNorm(out, params.conv1);
+            out = maxPool(out, [2, 2], [2, 2], 'same');
+            out = convWithBatchNorm(out, params.conv2);
+            out = maxPool(out, [2, 2], [2, 2], 'same');
+            out = convWithBatchNorm(out, params.conv3);
+            out = maxPool(out, [2, 2], [2, 2], 'same');
+            out = convWithBatchNorm(out, params.conv4);
+            out = maxPool(out, [2, 2], [2, 2], 'same');
+            out = convWithBatchNorm(out, params.conv5);
+            out = maxPool(out, [2, 2], [1, 1], 'same');
+            out = convWithBatchNorm(out, params.conv6);
+            out = convWithBatchNorm(out, params.conv7);
+            return convLayer(out, params.conv8, 'valid', false);
+        };
+        TinyYolov2.prototype.runMobilenet = function (x, params) {
+            var out = this.config.isFirstLayerConv2d
+                ? leaky(convLayer(x, params.conv0, 'valid', false))
+                : depthwiseSeparableConv(x, params.conv0);
+            out = maxPool(out, [2, 2], [2, 2], 'same');
+            out = depthwiseSeparableConv(out, params.conv1);
+            out = maxPool(out, [2, 2], [2, 2], 'same');
+            out = depthwiseSeparableConv(out, params.conv2);
+            out = maxPool(out, [2, 2], [2, 2], 'same');
+            out = depthwiseSeparableConv(out, params.conv3);
+            out = maxPool(out, [2, 2], [2, 2], 'same');
+            out = depthwiseSeparableConv(out, params.conv4);
+            out = maxPool(out, [2, 2], [2, 2], 'same');
+            out = depthwiseSeparableConv(out, params.conv5);
+            out = maxPool(out, [2, 2], [1, 1], 'same');
+            out = params.conv6 ? depthwiseSeparableConv(out, params.conv6) : out;
+            out = params.conv7 ? depthwiseSeparableConv(out, params.conv7) : out;
+            return convLayer(out, params.conv8, 'valid', false);
+        };
         TinyYolov2.prototype.forwardInput = function (input, inputSize) {
             var _this = this;
             var params = this.params;
             if (!params) {
                 throw new Error('TinyYolov2 - load model before inference');
             }
-            var out = tidy(function () {
+            return tidy(function () {
                 var batchTensor = input.toBatchTensor(inputSize, false).toFloat();
                 batchTensor = _this.config.meanRgb
                     ? normalize(batchTensor, _this.config.meanRgb)
                     : batchTensor;
                 batchTensor = batchTensor.div(scalar(256));
-                var out = convWithBatchNorm(batchTensor, params.conv0);
-                out = maxPool(out, [2, 2], [2, 2], 'same');
-                out = convWithBatchNorm(out, params.conv1);
-                out = maxPool(out, [2, 2], [2, 2], 'same');
-                out = convWithBatchNorm(out, params.conv2);
-                out = maxPool(out, [2, 2], [2, 2], 'same');
-                out = convWithBatchNorm(out, params.conv3);
-                out = maxPool(out, [2, 2], [2, 2], 'same');
-                out = convWithBatchNorm(out, params.conv4);
-                out = maxPool(out, [2, 2], [2, 2], 'same');
-                out = convWithBatchNorm(out, params.conv5);
-                out = maxPool(out, [2, 2], [1, 1], 'same');
-                out = convWithBatchNorm(out, params.conv6);
-                out = convWithBatchNorm(out, params.conv7);
-                out = convLayer(out, params.conv8, 'valid', false);
-                return out;
+                return _this.config.withSeparableConvs
+                    ? _this.runMobilenet(batchTensor, params)
+                    : _this.runTinyYolov2(batchTensor, params);
             });
-            return out;
         };
         TinyYolov2.prototype.forward = function (input, inputSize) {
             return __awaiter$1(this, void 0, void 0, function () {
@@ -1782,15 +1839,15 @@
             if (!modelUri) {
                 throw new Error('loadQuantizedParams - please specify the modelUri');
             }
-            return loadQuantizedParams(modelUri, this.config.withSeparableConvs, defaultModelName);
+            return loadQuantizedParams(modelUri, this.config, defaultModelName);
         };
         TinyYolov2.prototype.extractParams = function (weights) {
             var filterSizes = this.config.filterSizes || DEFAULT_FILTER_SIZES;
             var numFilters = filterSizes ? filterSizes.length : undefined;
-            if (numFilters !== 9) {
-                throw new Error("TinyYolov2 - expected 9 convolutional filters, but found " + numFilters + " filterSizes in config");
+            if (numFilters !== 7 && numFilters !== 8 && numFilters !== 9) {
+                throw new Error("TinyYolov2 - expected 7 | 8 | 9 convolutional filters, but found " + numFilters + " filterSizes in config");
             }
-            return extractParams(weights, this.config.withSeparableConvs, this.boxEncodingSize, filterSizes);
+            return extractParams(weights, this.config, this.boxEncodingSize, filterSizes);
         };
         TinyYolov2.prototype.extractBoxes = function (outputTensor, inputBlobDimensions, scoreThreshold) {
             var _this = this;

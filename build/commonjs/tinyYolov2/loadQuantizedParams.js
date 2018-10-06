@@ -27,10 +27,10 @@ function extractorsFactory(weightMap, paramMappings) {
         extractSeparableConvParams: extractSeparableConvParams
     };
 }
-function loadQuantizedParams(uri, withSeparableConvs, defaultModelName) {
+function loadQuantizedParams(uri, config, defaultModelName) {
     if (defaultModelName === void 0) { defaultModelName = ''; }
     return tslib_1.__awaiter(this, void 0, void 0, function () {
-        var weightMap, paramMappings, _a, extractConvParams, extractConvWithBatchNormParams, extractSeparableConvParams, extractConvFn, params;
+        var weightMap, paramMappings, _a, extractConvParams, extractConvWithBatchNormParams, extractSeparableConvParams, params, numFilters;
         return tslib_1.__generator(this, function (_b) {
             switch (_b.label) {
                 case 0: return [4 /*yield*/, tfjs_image_recognition_base_1.loadWeightMap(uri, defaultModelName)];
@@ -38,18 +38,33 @@ function loadQuantizedParams(uri, withSeparableConvs, defaultModelName) {
                     weightMap = _b.sent();
                     paramMappings = [];
                     _a = extractorsFactory(weightMap, paramMappings), extractConvParams = _a.extractConvParams, extractConvWithBatchNormParams = _a.extractConvWithBatchNormParams, extractSeparableConvParams = _a.extractSeparableConvParams;
-                    extractConvFn = withSeparableConvs ? extractSeparableConvParams : extractConvWithBatchNormParams;
-                    params = {
-                        conv0: extractConvFn('conv0'),
-                        conv1: extractConvFn('conv1'),
-                        conv2: extractConvFn('conv2'),
-                        conv3: extractConvFn('conv3'),
-                        conv4: extractConvFn('conv4'),
-                        conv5: extractConvFn('conv5'),
-                        conv6: extractConvFn('conv6'),
-                        conv7: extractConvFn('conv7'),
-                        conv8: extractConvParams('conv8')
-                    };
+                    if (config.withSeparableConvs) {
+                        numFilters = (config.filterSizes && config.filterSizes.length || 9);
+                        params = {
+                            conv0: config.isFirstLayerConv2d ? extractConvParams('conv0') : extractSeparableConvParams('conv0'),
+                            conv1: extractSeparableConvParams('conv1'),
+                            conv2: extractSeparableConvParams('conv2'),
+                            conv3: extractSeparableConvParams('conv3'),
+                            conv4: extractSeparableConvParams('conv4'),
+                            conv5: extractSeparableConvParams('conv5'),
+                            conv6: numFilters > 7 ? extractSeparableConvParams('conv6') : undefined,
+                            conv7: numFilters > 8 ? extractSeparableConvParams('conv7') : undefined,
+                            conv8: extractConvParams('conv8')
+                        };
+                    }
+                    else {
+                        params = {
+                            conv0: extractConvWithBatchNormParams('conv0'),
+                            conv1: extractConvWithBatchNormParams('conv1'),
+                            conv2: extractConvWithBatchNormParams('conv2'),
+                            conv3: extractConvWithBatchNormParams('conv3'),
+                            conv4: extractConvWithBatchNormParams('conv4'),
+                            conv5: extractConvWithBatchNormParams('conv5'),
+                            conv6: extractConvWithBatchNormParams('conv6'),
+                            conv7: extractConvWithBatchNormParams('conv7'),
+                            conv8: extractConvParams('conv8')
+                        };
+                    }
                     tfjs_image_recognition_base_1.disposeUnusedWeightTensors(weightMap, paramMappings);
                     return [2 /*return*/, { params: params, paramMappings: paramMappings }];
             }

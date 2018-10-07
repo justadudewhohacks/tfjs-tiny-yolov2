@@ -13,10 +13,10 @@
     tf = yolo.tf
 
     // uri to weights file of last checkpoint
-    const modelCheckpoint = '/tmp/new_bboxes_e24.weights'
+    const modelCheckpoint = '/tmp/new_bboxes_e39_i1000.weights'
 
     // continue training at epoch
-    const startEpoch = 24
+    const startEpoch = 39
 
     // optimizer used for loss minimization (I found adam with default parameters to work out)
     const learningRate = 0.0001 // 0.001
@@ -30,6 +30,7 @@
 
     // image sizes at which each image is backward passed
     window.trainSizes = [96, 128, 160, 224, 320, 416]
+    //window.trainSizes = [416, 480]
 
     // finish training after 'maxEpoch' epochs
     window.maxEpoch = Infinity

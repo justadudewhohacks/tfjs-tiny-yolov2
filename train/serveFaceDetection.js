@@ -31,9 +31,10 @@ app.use(express.static(groundTruthPath))
 app.use(express.static(testDataPath))
 
 const trainIds = fs.readdirSync(groundTruthPath).map(gt => gt.replace('.json', ''))
-//const testIds = fs.readdirSync(path.join(testDataPath, 'test_ground_truth.json')).map(gt => gt.replace('.json', ''))
+const testIds = JSON.parse(fs.readFileSync(path.join(testDataPath, 'test_ground_truth.json')).toString())
+  .map(gt => gt.imgFile.replace('.jpg', ''))
 
 app.get('/train_ids', (req, res) => res.status(202).send(trainIds))
-//app.get('/test_ids', (req, res) => res.status(202).send(testIds))
+app.get('/test_ids', (req, res) => res.status(202).send(testIds))
 
 app.listen(8000, () => console.log('Listening on port 8000!'))

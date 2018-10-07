@@ -15,14 +15,14 @@ import {
 import { convLayer } from '../common';
 import { ConvParams, SeparableConvParams } from '../common/types';
 import { TinyYolov2Config, validateConfig } from './config';
-import { DEFAULT_FILTER_SIZES, INPUT_SIZES } from './const';
+import { DEFAULT_FILTER_SIZES } from './const';
 import { convWithBatchNorm } from './convWithBatchNorm';
 import { depthwiseSeparableConv } from './depthwiseSeparableConv';
 import { extractParams } from './extractParams';
-import { getDefaultForwardParams } from './getDefaults';
 import { leaky } from './leaky';
 import { loadQuantizedParams } from './loadQuantizedParams';
-import { MobilenetParams, NetParams, TinyYolov2ForwardParams, TinyYolov2NetParams } from './types';
+import { ITinyYolov2Options, TinyYolov2Options } from './TinyYolov2Options';
+import { MobilenetParams, NetParams, TinyYolov2NetParams } from './types';
 
 export class TinyYolov2 extends NeuralNetwork<NetParams> {
 
@@ -114,17 +114,9 @@ export class TinyYolov2 extends NeuralNetwork<NetParams> {
     return await this.forwardInput(await toNetInput(input), inputSize)
   }
 
-  public async detect(input: TNetInput, forwardParams: TinyYolov2ForwardParams = {}): Promise<ObjectDetection[]> {
+  public async detect(input: TNetInput, forwardParams: ITinyYolov2Options = {}): Promise<ObjectDetection[]> {
 
-    const { inputSize: _inputSize, scoreThreshold } = getDefaultForwardParams(forwardParams)
-
-    const inputSize = typeof _inputSize === 'string'
-      ? INPUT_SIZES[_inputSize]
-      : _inputSize
-
-    if (typeof inputSize !== 'number') {
-      throw new Error(`TinyYolov2 - unknown inputSize: ${inputSize}, expected number or one of xs | sm | md | lg`)
-    }
+    const { inputSize, scoreThreshold } = new TinyYolov2Options(forwardParams)
 
     const netInput = await toNetInput(input)
     const out = await this.forwardInput(netInput, inputSize)

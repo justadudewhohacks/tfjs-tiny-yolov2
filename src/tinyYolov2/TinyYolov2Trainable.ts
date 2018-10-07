@@ -9,7 +9,7 @@ import {
 } from 'tfjs-image-recognition-base';
 
 import { TinyYolov2TrainableConfig, validateTrainConfig } from './config';
-import { getDefaultBackwardOptions } from './getDefaults';
+import { getDefaultBackwardOptions } from './getDefaultBackwardOptions';
 import { TinyYolov2 } from './TinyYolov2';
 import { TinyYolov2LossFunction } from './TinyYolov2LossFunction';
 import { GroundTruth, TinyYolov2BackwardOptions } from './types';

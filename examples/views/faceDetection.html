@@ -35,10 +35,10 @@
       <div class="row input-field" style="margin-right: 20px;">
         <select id="sizeType">
           <option value="" disabled selected>Input Size:</option>
-          <option value="xs">XS: 224 x 224</option>
-          <option value="sm">SM: 320 x 320</option>
-          <option value="md">MD: 416 x 416</option>
-          <option value="lg">LG: 608 x 608</option>
+          <option value="224">XS: 224 x 224</option>
+          <option value="320">SM: 320 x 320</option>
+          <option value="416">MD: 416 x 416</option>
+          <option value="608">LG: 608 x 608</option>
         </select>
         <label>Input Size</label>
       </div>
@@ -63,7 +63,7 @@
 
   <script>
     let scoreThreshold = 0.5
-    let sizeType = 'lg'
+    let sizeType = 608
 
     function onIncreaseThreshold() {
       scoreThreshold = Math.min(yolo.round(scoreThreshold + 0.1), 1.0)
@@ -97,7 +97,7 @@
       canvas.height = height
 
       const forwardParams = {
-        inputSize: sizeType,
+        inputSize: parseInt(sizeType),
         scoreThreshold
       }
 

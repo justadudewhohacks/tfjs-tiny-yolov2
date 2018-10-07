@@ -40,13 +40,6 @@ export type TinyYolov2NetParams = {
 
 export type NetParams = TinyYolov2NetParams | MobilenetParams
 
-export enum SizeType {
-  XS = 'xs',
-  SM = 'sm',
-  MD = 'md',
-  LG = 'lg'
-}
-
 export type GridPosition = {
   row: number
   col: number
@@ -60,11 +53,6 @@ export type GroundTruthWithGridPosition = GridPosition & {
 
 export type GroundTruth = IRect & {
   label: number
-}
-
-export type TinyYolov2ForwardParams = {
-  inputSize?: SizeType | number
-  scoreThreshold?: number
 }
 
 export type YoloLoss = {

@@ -1,0 +1,1 @@
+{"version":3,"file":"getDefaultBackwardOptions.js","sourceRoot":"","sources":["../../../src/tinyYolov2/getDefaultBackwardOptions.ts"],"names":[],"mappings":";;AAAA,iCAAoC;AAGpC,mCAA0C,OAAkC;IAC1E,OAAO,MAAM,CAAC,MAAM,CAClB,EAAE,EACF;QACE,UAAU,EAAE,iBAAS;KACtB,EACD,OAAO,CACR,CAAA;AACH,CAAC;AARD,8DAQC"}

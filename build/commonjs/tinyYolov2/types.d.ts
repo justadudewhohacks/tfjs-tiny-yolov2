@@ -33,12 +33,6 @@ export declare type TinyYolov2NetParams = {
     conv8: ConvParams;
 };
 export declare type NetParams = TinyYolov2NetParams | MobilenetParams;
-export declare enum SizeType {
-    XS = "xs",
-    SM = "sm",
-    MD = "md",
-    LG = "lg",
-}
 export declare type GridPosition = {
     row: number;
     col: number;
@@ -50,10 +44,6 @@ export declare type GroundTruthWithGridPosition = GridPosition & {
 };
 export declare type GroundTruth = IRect & {
     label: number;
-};
-export declare type TinyYolov2ForwardParams = {
-    inputSize?: SizeType | number;
-    scoreThreshold?: number;
 };
 export declare type YoloLoss = {
     totalLoss: number;

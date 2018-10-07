@@ -2,7 +2,7 @@ import * as tslib_1 from "tslib";
 import * as tf from '@tensorflow/tfjs-core';
 import { computeReshapedDimensions, getMediaDimensions, imageToSquare, Rect, toNetInput, } from 'tfjs-image-recognition-base';
 import { validateTrainConfig } from './config';
-import { getDefaultBackwardOptions } from './getDefaults';
+import { getDefaultBackwardOptions } from './getDefaultBackwardOptions';
 import { TinyYolov2 } from './TinyYolov2';
 import { TinyYolov2LossFunction } from './TinyYolov2LossFunction';
 var TinyYolov2Trainable = /** @class */ (function (_super) {

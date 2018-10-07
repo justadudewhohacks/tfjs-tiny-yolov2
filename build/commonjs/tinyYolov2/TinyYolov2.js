@@ -9,9 +9,9 @@ var const_1 = require("./const");
 var convWithBatchNorm_1 = require("./convWithBatchNorm");
 var depthwiseSeparableConv_1 = require("./depthwiseSeparableConv");
 var extractParams_1 = require("./extractParams");
-var getDefaults_1 = require("./getDefaults");
 var leaky_1 = require("./leaky");
 var loadQuantizedParams_1 = require("./loadQuantizedParams");
+var TinyYolov2Options_1 = require("./TinyYolov2Options");
 var TinyYolov2 = /** @class */ (function (_super) {
     tslib_1.__extends(TinyYolov2, _super);
     function TinyYolov2(config) {
@@ -112,17 +112,11 @@ var TinyYolov2 = /** @class */ (function (_super) {
         if (forwardParams === void 0) { forwardParams = {}; }
         return tslib_1.__awaiter(this, void 0, void 0, function () {
             var _this = this;
-            var _a, _inputSize, scoreThreshold, inputSize, netInput, out, out0, inputDimensions, results, boxes, scores, classScores, classNames, indices, detections;
+            var _a, inputSize, scoreThreshold, netInput, out, out0, inputDimensions, results, boxes, scores, classScores, classNames, indices, detections;
             return tslib_1.__generator(this, function (_b) {
                 switch (_b.label) {
                     case 0:
-                        _a = getDefaults_1.getDefaultForwardParams(forwardParams), _inputSize = _a.inputSize, scoreThreshold = _a.scoreThreshold;
-                        inputSize = typeof _inputSize === 'string'
-                            ? const_1.INPUT_SIZES[_inputSize]
-                            : _inputSize;
-                        if (typeof inputSize !== 'number') {
-                            throw new Error("TinyYolov2 - unknown inputSize: " + inputSize + ", expected number or one of xs | sm | md | lg");
-                        }
+                        _a = new TinyYolov2Options_1.TinyYolov2Options(forwardParams), inputSize = _a.inputSize, scoreThreshold = _a.scoreThreshold;
                         return [4 /*yield*/, tfjs_image_recognition_base_1.toNetInput(input)];
                     case 1:
                         netInput = _b.sent();

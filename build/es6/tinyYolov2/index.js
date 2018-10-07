@@ -1,9 +1,5 @@
-import * as types from './types';
 export * from './TinyYolov2';
 export * from './TinyYolov2LossFunction';
 export * from './TinyYolov2Trainable';
-export var TinyYolov2Types;
-(function (TinyYolov2Types) {
-    TinyYolov2Types.SizeType = types.SizeType;
-})(TinyYolov2Types || (TinyYolov2Types = {}));
+export * from './TinyYolov2Options';
 //# sourceMappingURL=index.js.map

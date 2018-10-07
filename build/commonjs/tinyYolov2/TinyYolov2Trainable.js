@@ -4,7 +4,7 @@ var tslib_1 = require("tslib");
 var tf = require("@tensorflow/tfjs-core");
 var tfjs_image_recognition_base_1 = require("tfjs-image-recognition-base");
 var config_1 = require("./config");
-var getDefaults_1 = require("./getDefaults");
+var getDefaultBackwardOptions_1 = require("./getDefaultBackwardOptions");
 var TinyYolov2_1 = require("./TinyYolov2");
 var TinyYolov2LossFunction_1 = require("./TinyYolov2LossFunction");
 var TinyYolov2Trainable = /** @class */ (function (_super) {
@@ -37,7 +37,7 @@ var TinyYolov2Trainable = /** @class */ (function (_super) {
             return tslib_1.__generator(this, function (_b) {
                 switch (_b.label) {
                     case 0:
-                        _a = getDefaults_1.getDefaultBackwardOptions(options), minBoxSize = _a.minBoxSize, reportLosses = _a.reportLosses;
+                        _a = getDefaultBackwardOptions_1.getDefaultBackwardOptions(options), minBoxSize = _a.minBoxSize, reportLosses = _a.reportLosses;
                         reshapedImgDims = tfjs_image_recognition_base_1.computeReshapedDimensions(tfjs_image_recognition_base_1.getMediaDimensions(img), inputSize);
                         filteredGroundTruthBoxes = this.filterGroundTruthBoxes(groundTruth, reshapedImgDims, minBoxSize);
                         if (!filteredGroundTruthBoxes.length) {

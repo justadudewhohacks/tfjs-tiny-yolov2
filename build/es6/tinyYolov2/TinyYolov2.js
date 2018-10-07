@@ -3,13 +3,13 @@ import * as tf from '@tensorflow/tfjs-core';
 import { BoundingBox, NeuralNetwork, nonMaxSuppression, normalize, ObjectDetection, sigmoid, toNetInput, } from 'tfjs-image-recognition-base';
 import { convLayer } from '../common';
 import { validateConfig } from './config';
-import { DEFAULT_FILTER_SIZES, INPUT_SIZES } from './const';
+import { DEFAULT_FILTER_SIZES } from './const';
 import { convWithBatchNorm } from './convWithBatchNorm';
 import { depthwiseSeparableConv } from './depthwiseSeparableConv';
 import { extractParams } from './extractParams';
-import { getDefaultForwardParams } from './getDefaults';
 import { leaky } from './leaky';
 import { loadQuantizedParams } from './loadQuantizedParams';
+import { TinyYolov2Options } from './TinyYolov2Options';
 var TinyYolov2 = /** @class */ (function (_super) {
     tslib_1.__extends(TinyYolov2, _super);
     function TinyYolov2(config) {
@@ -110,17 +110,11 @@ var TinyYolov2 = /** @class */ (function (_super) {
         if (forwardParams === void 0) { forwardParams = {}; }
         return tslib_1.__awaiter(this, void 0, void 0, function () {
             var _this = this;
-            var _a, _inputSize, scoreThreshold, inputSize, netInput, out, out0, inputDimensions, results, boxes, scores, classScores, classNames, indices, detections;
+            var _a, inputSize, scoreThreshold, netInput, out, out0, inputDimensions, results, boxes, scores, classScores, classNames, indices, detections;
             return tslib_1.__generator(this, function (_b) {
                 switch (_b.label) {
                     case 0:
-                        _a = getDefaultForwardParams(forwardParams), _inputSize = _a.inputSize, scoreThreshold = _a.scoreThreshold;
-                        inputSize = typeof _inputSize === 'string'
-                            ? INPUT_SIZES[_inputSize]
-                            : _inputSize;
-                        if (typeof inputSize !== 'number') {
-                            throw new Error("TinyYolov2 - unknown inputSize: " + inputSize + ", expected number or one of xs | sm | md | lg");
-                        }
+                        _a = new TinyYolov2Options(forwardParams), inputSize = _a.inputSize, scoreThreshold = _a.scoreThreshold;
                         return [4 /*yield*/, toNetInput(input)];
                     case 1:
                         netInput = _b.sent();

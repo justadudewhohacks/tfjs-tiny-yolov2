@@ -1480,14 +1480,6 @@
         };
     }
 
-    var SizeType;
-    (function (SizeType) {
-        SizeType["XS"] = "xs";
-        SizeType["SM"] = "sm";
-        SizeType["MD"] = "md";
-        SizeType["LG"] = "lg";
-    })(SizeType || (SizeType = {}));
-
     var isNumber = function (arg) { return typeof arg === 'number'; };
     function validateConfig(config) {
         if (!config) {
@@ -1522,7 +1514,6 @@
         return config;
     }
 
-    var INPUT_SIZES = { xs: 224, sm: 320, md: 416, lg: 608 };
     var CELL_SIZE = 32;
     var DEFAULT_FILTER_SIZES = [
         3, 16, 32, 64, 128, 256, 512, 1024, 1024
@@ -1615,18 +1606,6 @@
         return { params: params, paramMappings: paramMappings };
     }
 
-    function getDefaultForwardParams(params) {
-        return Object.assign({}, {
-            inputSize: SizeType.MD,
-            scoreThreshold: 0.5
-        }, params);
-    }
-    function getDefaultBackwardOptions(options) {
-        return Object.assign({}, {
-            minBoxSize: CELL_SIZE
-        }, options);
-    }
-
     function extractorsFactory$1(weightMap, paramMappings) {
         var extractWeightEntry = extractWeightEntryFactory(weightMap, paramMappings);
         function extractBatchNormParams(prefix) {
@@ -1695,6 +1674,38 @@
             });
         });
     }
+
+    (function (TinyYolov2SizeType) {
+        TinyYolov2SizeType[TinyYolov2SizeType["XS"] = 224] = "XS";
+        TinyYolov2SizeType[TinyYolov2SizeType["SM"] = 320] = "SM";
+        TinyYolov2SizeType[TinyYolov2SizeType["MD"] = 416] = "MD";
+        TinyYolov2SizeType[TinyYolov2SizeType["LG"] = 608] = "LG";
+    })(exports.TinyYolov2SizeType || (exports.TinyYolov2SizeType = {}));
+    var TinyYolov2Options = /** @class */ (function () {
+        function TinyYolov2Options(_a) {
+            var _b = _a === void 0 ? {} : _a, inputSize = _b.inputSize, scoreThreshold = _b.scoreThreshold;
+            this._name = 'TinyYolov2Options';
+            this._inputSize = inputSize || 416;
+            this._scoreThreshold = scoreThreshold || 0.5;
+            if (typeof this._inputSize !== 'number' || this._inputSize % 32 !== 0) {
+                throw new Error(this._name + " - expected inputSize to be a number divisible by 32");
+            }
+            if (typeof this._scoreThreshold !== 'number' || this._scoreThreshold <= 0 || this._scoreThreshold >= 1) {
+                throw new Error(this._name + " - expected scoreThreshold to be a number between 0 and 1");
+            }
+        }
+        Object.defineProperty(TinyYolov2Options.prototype, "inputSize", {
+            get: function () { return this._inputSize; },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(TinyYolov2Options.prototype, "scoreThreshold", {
+            get: function () { return this._scoreThreshold; },
+            enumerable: true,
+            configurable: true
+        });
+        return TinyYolov2Options;
+    }());
 
     var TinyYolov2 = /** @class */ (function (_super) {
         __extends$1(TinyYolov2, _super);
@@ -1796,17 +1807,11 @@
             if (forwardParams === void 0) { forwardParams = {}; }
             return __awaiter$1(this, void 0, void 0, function () {
                 var _this = this;
-                var _a, _inputSize, scoreThreshold, inputSize, netInput, out, out0, inputDimensions, results, boxes, scores, classScores, classNames, indices, detections;
+                var _a, inputSize, scoreThreshold, netInput, out, out0, inputDimensions, results, boxes, scores, classScores, classNames, indices, detections;
                 return __generator$1(this, function (_b) {
                     switch (_b.label) {
                         case 0:
-                            _a = getDefaultForwardParams(forwardParams), _inputSize = _a.inputSize, scoreThreshold = _a.scoreThreshold;
-                            inputSize = typeof _inputSize === 'string'
-                                ? INPUT_SIZES[_inputSize]
-                                : _inputSize;
-                            if (typeof inputSize !== 'number') {
-                                throw new Error("TinyYolov2 - unknown inputSize: " + inputSize + ", expected number or one of xs | sm | md | lg");
-                            }
+                            _a = new TinyYolov2Options(forwardParams), inputSize = _a.inputSize, scoreThreshold = _a.scoreThreshold;
                             return [4 /*yield*/, toNetInput(input)];
                         case 1:
                             netInput = _b.sent();
@@ -2225,6 +2230,12 @@
         return TinyYolov2LossFunction;
     }());
 
+    function getDefaultBackwardOptions(options) {
+        return Object.assign({}, {
+            minBoxSize: CELL_SIZE
+        }, options);
+    }
+
     var TinyYolov2Trainable = /** @class */ (function (_super) {
         __extends$1(TinyYolov2Trainable, _super);
         function TinyYolov2Trainable(trainableConfig, optimizer) {
@@ -2326,10 +2337,6 @@
         return TinyYolov2Trainable;
     }(TinyYolov2));
 
-    (function (TinyYolov2Types) {
-        TinyYolov2Types.SizeType = SizeType;
-    })(exports.TinyYolov2Types || (exports.TinyYolov2Types = {}));
-
     exports.tf = tfCore_esm;
     exports.Box = Box;
     exports.BoundingBox = BoundingBox;
@@ -2391,6 +2398,7 @@
     exports.TinyYolov2 = TinyYolov2;
     exports.TinyYolov2LossFunction = TinyYolov2LossFunction;
     exports.TinyYolov2Trainable = TinyYolov2Trainable;
+    exports.TinyYolov2Options = TinyYolov2Options;
 
     Object.defineProperty(exports, '__esModule', { value: true });
 

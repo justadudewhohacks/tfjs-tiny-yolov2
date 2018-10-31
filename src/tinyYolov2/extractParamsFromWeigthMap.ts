@@ -1,15 +1,10 @@
 import * as tf from '@tensorflow/tfjs-core';
-import {
-  disposeUnusedWeightTensors,
-  extractWeightEntryFactory,
-  loadWeightMap,
-  ParamMapping,
-} from 'tfjs-image-recognition-base';
+import { disposeUnusedWeightTensors, extractWeightEntryFactory, ParamMapping } from 'tfjs-image-recognition-base';
 
 import { ConvParams } from '../common';
 import { loadSeparableConvParamsFactory } from '../common/extractSeparableConvParamsFactory';
 import { TinyYolov2Config } from './config';
-import { BatchNorm, ConvWithBatchNorm, NetParams } from './types';
+import { BatchNorm, ConvWithBatchNorm, TinyYolov2NetParams } from './types';
 
 function extractorsFactory(weightMap: any, paramMappings: ParamMapping[]) {
 
@@ -43,13 +38,11 @@ function extractorsFactory(weightMap: any, paramMappings: ParamMapping[]) {
 
 }
 
-export async function loadQuantizedParams(
-  uri: string,
-  config: TinyYolov2Config,
-  defaultModelName: string = ''
-): Promise<{ params: NetParams, paramMappings: ParamMapping[] }> {
+export function extractParamsFromWeigthMap(
+  weightMap: tf.NamedTensorMap,
+  config: TinyYolov2Config
+): { params: TinyYolov2NetParams, paramMappings: ParamMapping[] } {
 
-  const weightMap = await loadWeightMap(uri, defaultModelName)
   const paramMappings: ParamMapping[] = []
 
   const {
@@ -58,7 +51,7 @@ export async function loadQuantizedParams(
     extractSeparableConvParams
   } = extractorsFactory(weightMap, paramMappings)
 
-  let params: NetParams
+  let params: TinyYolov2NetParams
 
   if (config.withSeparableConvs) {
     const numFilters = (config.filterSizes && config.filterSizes.length || 9)

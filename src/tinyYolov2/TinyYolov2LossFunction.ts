@@ -1,5 +1,5 @@
 import * as tf from '@tensorflow/tfjs-core';
-import { BoundingBox, Dimensions, iou, Point, Rect } from 'tfjs-image-recognition-base';
+import { BoundingBox, Dimensions, IDimensions, iou, Point, Rect } from 'tfjs-image-recognition-base';
 
 import { TinyYolov2TrainableConfig } from './config';
 import { CELL_SIZE } from './const';
@@ -23,11 +23,11 @@ export class TinyYolov2LossFunction {
     outputTensor: tf.Tensor4D,
     groundTruth: GroundTruth[],
     predictedBoxes: GroundTruthWithGridPosition[],
-    reshapedImgDims: Dimensions,
+    reshapedImgDims: IDimensions,
     config: TinyYolov2TrainableConfig
   ) {
     this._config = config
-    this._reshapedImgDims = reshapedImgDims
+    this._reshapedImgDims = new Dimensions(reshapedImgDims.width, reshapedImgDims.height)
     this._outputTensor = outputTensor
     this._predictedBoxes = predictedBoxes
 

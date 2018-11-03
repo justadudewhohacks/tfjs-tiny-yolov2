@@ -1,5 +1,5 @@
 import * as tf from '@tensorflow/tfjs-core';
-import { Dimensions, Point } from 'tfjs-image-recognition-base';
+import { Dimensions, IDimensions, Point } from 'tfjs-image-recognition-base';
 import { TinyYolov2TrainableConfig } from './config';
 import { GroundTruth, GroundTruthWithGridPosition } from './types';
 export declare class TinyYolov2LossFunction {
@@ -13,7 +13,7 @@ export declare class TinyYolov2LossFunction {
     coordBoxOffsetMask: tf.Tensor4D;
     coordBoxSizeMask: tf.Tensor4D;
     groundTruthClassScoresMask: tf.Tensor4D;
-    constructor(outputTensor: tf.Tensor4D, groundTruth: GroundTruth[], predictedBoxes: GroundTruthWithGridPosition[], reshapedImgDims: Dimensions, config: TinyYolov2TrainableConfig);
+    constructor(outputTensor: tf.Tensor4D, groundTruth: GroundTruth[], predictedBoxes: GroundTruthWithGridPosition[], reshapedImgDims: IDimensions, config: TinyYolov2TrainableConfig);
     readonly config: TinyYolov2TrainableConfig;
     readonly reshapedImgDims: Dimensions;
     readonly outputTensor: tf.Tensor4D;

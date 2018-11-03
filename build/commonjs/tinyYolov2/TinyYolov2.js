@@ -9,8 +9,8 @@ var const_1 = require("./const");
 var convWithBatchNorm_1 = require("./convWithBatchNorm");
 var depthwiseSeparableConv_1 = require("./depthwiseSeparableConv");
 var extractParams_1 = require("./extractParams");
+var extractParamsFromWeigthMap_1 = require("./extractParamsFromWeigthMap");
 var leaky_1 = require("./leaky");
-var loadQuantizedParams_1 = require("./loadQuantizedParams");
 var TinyYolov2Options_1 = require("./TinyYolov2Options");
 var TinyYolov2 = /** @class */ (function (_super) {
     tslib_1.__extends(TinyYolov2, _super);
@@ -144,12 +144,11 @@ var TinyYolov2 = /** @class */ (function (_super) {
             });
         });
     };
-    TinyYolov2.prototype.loadQuantizedParams = function (modelUri, defaultModelName) {
-        if (defaultModelName === void 0) { defaultModelName = ''; }
-        if (!modelUri) {
-            throw new Error('loadQuantizedParams - please specify the modelUri');
-        }
-        return loadQuantizedParams_1.loadQuantizedParams(modelUri, this.config, defaultModelName);
+    TinyYolov2.prototype.getDefaultModelName = function () {
+        return '';
+    };
+    TinyYolov2.prototype.extractParamsFromWeigthMap = function (weightMap) {
+        return extractParamsFromWeigthMap_1.extractParamsFromWeigthMap(weightMap, this.config);
     };
     TinyYolov2.prototype.extractParams = function (weights) {
         var filterSizes = this.config.filterSizes || const_1.DEFAULT_FILTER_SIZES;

@@ -1,10 +1,10 @@
 import * as tf from '@tensorflow/tfjs-core';
-import { BoundingBox, iou, Rect } from 'tfjs-image-recognition-base';
+import { BoundingBox, Dimensions, iou, Rect } from 'tfjs-image-recognition-base';
 import { CELL_SIZE } from './const';
 var TinyYolov2LossFunction = /** @class */ (function () {
     function TinyYolov2LossFunction(outputTensor, groundTruth, predictedBoxes, reshapedImgDims, config) {
         this._config = config;
-        this._reshapedImgDims = reshapedImgDims;
+        this._reshapedImgDims = new Dimensions(reshapedImgDims.width, reshapedImgDims.height);
         this._outputTensor = outputTensor;
         this._predictedBoxes = predictedBoxes;
         this.validateGroundTruthBoxes(groundTruth);

@@ -7,8 +7,8 @@ import { DEFAULT_FILTER_SIZES } from './const';
 import { convWithBatchNorm } from './convWithBatchNorm';
 import { depthwiseSeparableConv } from './depthwiseSeparableConv';
 import { extractParams } from './extractParams';
+import { extractParamsFromWeigthMap } from './extractParamsFromWeigthMap';
 import { leaky } from './leaky';
-import { loadQuantizedParams } from './loadQuantizedParams';
 import { TinyYolov2Options } from './TinyYolov2Options';
 var TinyYolov2 = /** @class */ (function (_super) {
     tslib_1.__extends(TinyYolov2, _super);
@@ -142,12 +142,11 @@ var TinyYolov2 = /** @class */ (function (_super) {
             });
         });
     };
-    TinyYolov2.prototype.loadQuantizedParams = function (modelUri, defaultModelName) {
-        if (defaultModelName === void 0) { defaultModelName = ''; }
-        if (!modelUri) {
-            throw new Error('loadQuantizedParams - please specify the modelUri');
-        }
-        return loadQuantizedParams(modelUri, this.config, defaultModelName);
+    TinyYolov2.prototype.getDefaultModelName = function () {
+        return '';
+    };
+    TinyYolov2.prototype.extractParamsFromWeigthMap = function (weightMap) {
+        return extractParamsFromWeigthMap(weightMap, this.config);
     };
     TinyYolov2.prototype.extractParams = function (weights) {
         var filterSizes = this.config.filterSizes || DEFAULT_FILTER_SIZES;

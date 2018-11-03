@@ -21,7 +21,7 @@ export declare type MobilenetParams = {
     conv7?: SeparableConvParams;
     conv8: ConvParams;
 };
-export declare type TinyYolov2NetParams = {
+export declare type DefaultTinyYolov2NetParams = {
     conv0: ConvWithBatchNorm;
     conv1: ConvWithBatchNorm;
     conv2: ConvWithBatchNorm;
@@ -32,7 +32,7 @@ export declare type TinyYolov2NetParams = {
     conv7: ConvWithBatchNorm;
     conv8: ConvParams;
 };
-export declare type NetParams = TinyYolov2NetParams | MobilenetParams;
+export declare type TinyYolov2NetParams = DefaultTinyYolov2NetParams | MobilenetParams;
 export declare type GridPosition = {
     row: number;
     col: number;

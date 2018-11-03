@@ -6,7 +6,7 @@ var const_1 = require("./const");
 var TinyYolov2LossFunction = /** @class */ (function () {
     function TinyYolov2LossFunction(outputTensor, groundTruth, predictedBoxes, reshapedImgDims, config) {
         this._config = config;
-        this._reshapedImgDims = reshapedImgDims;
+        this._reshapedImgDims = new tfjs_image_recognition_base_1.Dimensions(reshapedImgDims.width, reshapedImgDims.height);
         this._outputTensor = outputTensor;
         this._predictedBoxes = predictedBoxes;
         this.validateGroundTruthBoxes(groundTruth);

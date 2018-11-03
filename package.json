@@ -10,7 +10,7 @@
     "rollup": "rollup -c rollup.config.js",
     "tsc": "tsc",
     "tsc-es6": "tsc --p tsconfig.es6.json",
-    "build": "npm run rollup && npm run rollup-min && npm run tsc && npm run tsc-es6",
+    "build": "rm -rf ./build && rm -rf ./dist && npm run rollup && npm run rollup-min && npm run tsc && npm run tsc-es6",
     "test": "karma start",
     "test-travis": "set KARMA_BROWSERS=ChromeHeadlessNoSandbox&& karma start --single-run"
   },
@@ -23,8 +23,8 @@
   "author": "justadudewhohacks",
   "license": "MIT",
   "dependencies": {
-    "@tensorflow/tfjs-core": "^0.13.2",
-    "tfjs-image-recognition-base": "^0.1.2",
+    "@tensorflow/tfjs-core": "0.13.8",
+    "tfjs-image-recognition-base": "0.2.0",
     "tslib": "^1.9.3"
   },
   "devDependencies": {

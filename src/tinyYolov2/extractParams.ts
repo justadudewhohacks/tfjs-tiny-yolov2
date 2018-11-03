@@ -4,7 +4,7 @@ import { extractWeightsFactory, ExtractWeightsFunction, ParamMapping } from 'tfj
 import { extractConvParamsFactory } from '../common';
 import { extractSeparableConvParamsFactory } from '../common/extractSeparableConvParamsFactory';
 import { TinyYolov2Config } from './config';
-import { BatchNorm, ConvWithBatchNorm, NetParams } from './types';
+import { BatchNorm, ConvWithBatchNorm, TinyYolov2NetParams } from './types';
 
 function extractorsFactory(extractWeights: ExtractWeightsFunction, paramMappings: ParamMapping[]) {
 
@@ -45,7 +45,7 @@ export function extractParams(
   config: TinyYolov2Config,
   boxEncodingSize: number,
   filterSizes: number[]
-): { params: NetParams, paramMappings: ParamMapping[] } {
+): { params: TinyYolov2NetParams, paramMappings: ParamMapping[] } {
 
   const {
     extractWeights,
@@ -60,7 +60,7 @@ export function extractParams(
     extractSeparableConvParams
   } = extractorsFactory(extractWeights, paramMappings)
 
-  let params: NetParams
+  let params: TinyYolov2NetParams
 
   if (config.withSeparableConvs) {
     const [s0, s1, s2, s3, s4, s5, s6, s7, s8] = filterSizes

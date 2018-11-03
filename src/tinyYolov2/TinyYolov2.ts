@@ -19,12 +19,12 @@ import { DEFAULT_FILTER_SIZES } from './const';
 import { convWithBatchNorm } from './convWithBatchNorm';
 import { depthwiseSeparableConv } from './depthwiseSeparableConv';
 import { extractParams } from './extractParams';
+import { extractParamsFromWeigthMap } from './extractParamsFromWeigthMap';
 import { leaky } from './leaky';
-import { loadQuantizedParams } from './loadQuantizedParams';
 import { ITinyYolov2Options, TinyYolov2Options } from './TinyYolov2Options';
-import { MobilenetParams, NetParams, TinyYolov2NetParams } from './types';
+import { DefaultTinyYolov2NetParams, MobilenetParams, TinyYolov2NetParams } from './types';
 
-export class TinyYolov2 extends NeuralNetwork<NetParams> {
+export class TinyYolov2 extends NeuralNetwork<TinyYolov2NetParams> {
 
   private _config: TinyYolov2Config
 
@@ -46,7 +46,7 @@ export class TinyYolov2 extends NeuralNetwork<NetParams> {
     return 5 + (this.withClassScores ? this.config.classes.length : 0)
   }
 
-  public runTinyYolov2(x: tf.Tensor4D, params: TinyYolov2NetParams): tf.Tensor4D {
+  public runTinyYolov2(x: tf.Tensor4D, params: DefaultTinyYolov2NetParams): tf.Tensor4D {
 
     let out = convWithBatchNorm(x, params.conv0)
     out = tf.maxPool(out, [2, 2], [2, 2], 'same')
@@ -106,7 +106,7 @@ export class TinyYolov2 extends NeuralNetwork<NetParams> {
 
       return this.config.withSeparableConvs
         ? this.runMobilenet(batchTensor, params as MobilenetParams)
-        : this.runTinyYolov2(batchTensor, params as TinyYolov2NetParams)
+        : this.runTinyYolov2(batchTensor, params as DefaultTinyYolov2NetParams)
     })
   }
 
@@ -156,12 +156,12 @@ export class TinyYolov2 extends NeuralNetwork<NetParams> {
     return detections
   }
 
-  protected loadQuantizedParams(modelUri: string | undefined, defaultModelName: string = '') {
-    if (!modelUri) {
-      throw new Error('loadQuantizedParams - please specify the modelUri')
-    }
+  protected getDefaultModelName(): string {
+    return ''
+  }
 
-    return loadQuantizedParams(modelUri, this.config, defaultModelName)
+  protected extractParamsFromWeigthMap(weightMap: tf.NamedTensorMap) {
+    return extractParamsFromWeigthMap(weightMap, this.config)
   }
 
   protected extractParams(weights: Float32Array) {
